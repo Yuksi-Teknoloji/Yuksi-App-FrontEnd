@@ -50,7 +50,10 @@ export const AuthProvider = ({children}) => {
         console.log('Token loading error:', e);
       }
 
-      dispatch({type: 'RESTORE_TOKEN', token: userToken});
+      // Wait for 3 seconds before hiding the loading screen
+      setTimeout(() => {
+        dispatch({type: 'RESTORE_TOKEN', token: userToken});
+      }, 3000);
     };
 
     bootstrapAsync();
@@ -75,12 +78,14 @@ export const AuthProvider = ({children}) => {
         console.log('Sign out error:', error);
       }
     },
-    signUp: async data => {
-      // Burada gerçek API çağrısı yapılacak
+    signUp: async ({ navigation, data }) => {
+      // Gerçek API çağrısı burada olacak (mock)
       try {
-        const userToken = 'dummy-auth-token'; // API'den gelecek token
+        const userToken = 'dummy-auth-token';
         await setItem('userToken', userToken);
-        dispatch({type: 'SIGN_IN', token: userToken});
+        // Onboarding gösterilecek: token kaydedildi fakat hemen SIGN_IN dispatch etmiyoruz.
+        // SIGN_IN onboarding bittiğinde tetiklenecek.
+        navigation.replace('Onboarding');
       } catch (error) {
         console.log('Sign up error:', error);
       }

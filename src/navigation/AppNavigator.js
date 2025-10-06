@@ -5,17 +5,13 @@ import {View, ActivityIndicator, StyleSheet} from 'react-native';
 import {useAuth} from '../context/AuthContext';
 import AuthStack from './AuthStack';
 import MainStack from './MainStack';
+import LoadingScreen from '../screens/LoadingScreen';
 
 const AppNavigator = () => {
   const {isLoading, userToken} = useAuth();
 
   if (isLoading) {
-    // Loading ekranı
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#FF5B04" />
-      </View>
-    );
+    return <LoadingScreen />;
   }
 
   return (

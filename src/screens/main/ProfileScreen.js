@@ -18,8 +18,10 @@ import PaymentIcon from '@/assets/images/payment-icon.svg';
 import HistoryIcon from '@/assets/images/history-icon.svg';
 import LogoutIcon from '@/assets/images/logout-icon.svg';
 import DeleteAccountIcon from '@/assets/images/delete-account-icon.svg';
+import { useAuth } from '../../context/AuthContext';
 
 const ProfileScreen = () => {
+  const { signOut } = useAuth();
   const menuItems = [
     {
       id: 'profile-settings',
@@ -56,7 +58,7 @@ const ProfileScreen = () => {
       id: 'logout',
       title: 'Çıkış Yap',
       icon: LogoutIcon,
-      onPress: () => console.log('Çıkış Yap'),
+      onPress: () => signOut(),
     },
     {
       id: 'delete',

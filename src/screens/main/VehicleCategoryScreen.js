@@ -50,7 +50,10 @@ const VehicleCategoryScreen = ({navigation}) => {
   ];
 
   const VehicleCard = ({item}) => (
-    <TouchableOpacity style={styles.vehicleCard}>
+    <TouchableOpacity
+      style={styles.vehicleCard}
+      onPress={() => navigation.navigate('VehicleList', { categoryId: item.id, categoryName: item.name })}
+    >
       <View style={styles.imageContainer}>
         <item.IconComponent width={100} height={81} />
       </View>

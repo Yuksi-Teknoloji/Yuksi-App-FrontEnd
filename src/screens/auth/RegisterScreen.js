@@ -136,7 +136,7 @@ const RegisterScreen = ({navigation}) => {
             {/* Register Button */}
             <TouchableOpacity
               style={styles.registerButton}
-              onPress={() => signUp()}>
+              onPress={() => signUp({ navigation, data: {} })}>
               <Text style={styles.registerButtonText}>Kayıt Ol</Text>
             </TouchableOpacity>
 

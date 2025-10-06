@@ -8,6 +8,8 @@ import PostScreen from '../screens/main/PostScreen';
 import MessageScreen from '../screens/main/MessageScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
 import VehicleCategoryScreen from '../screens/main/VehicleCategoryScreen';
+import VehicleListScreen from '../screens/main/VehicleListScreen';
+import ModelSelectScreen from '../screens/main/ModelSelectScreen';
 
 // SVG ikonları import et - normal ve pressed versiyonları
 import HomeIcon from '../assets/icons/home-icon.svg';
@@ -113,6 +115,8 @@ const MainStack = () => {
       }}>
       <Stack.Screen name="TabNavigator" component={TabNavigator} />
       <Stack.Screen name="VehicleCategory" component={VehicleCategoryScreen} />
+  <Stack.Screen name="VehicleList" component={VehicleListScreen} />
+  <Stack.Screen name="ModelSelect" component={ModelSelectScreen} />
     </Stack.Navigator>
   );
 };
