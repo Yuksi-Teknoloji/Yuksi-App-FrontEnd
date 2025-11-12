@@ -18,6 +18,7 @@ import PaymentIcon from '@/assets/images/payment-icon.svg';
 import HistoryIcon from '@/assets/images/history-icon.svg';
 import LogoutIcon from '@/assets/images/logout-icon.svg';
 import DeleteAccountIcon from '@/assets/images/delete-account-icon.svg';
+import ProfileIcon from '@/assets/icons/profile-icon.svg';
 import { useAuth } from '../../context/AuthContext';
 
 const ProfileScreen = () => {
@@ -71,10 +72,9 @@ const ProfileScreen = () => {
   const ProfileCard = () => (
     <View style={styles.profileCard}>
       <View style={styles.profileInfo}>
-        <Image
-          source={require('@/assets/images/profile-photo-3a68ba.png')}
-          style={styles.profilePhoto}
-        />
+        <View style={styles.profilePhoto}>
+          <ProfileIcon width={28} height={28} />
+        </View>
         <View style={styles.profileText}>
           <Text style={styles.profileName}>Rıdvan Berat Çalış</Text>
           <Text style={styles.profilePhone}>0 5xx xxx xx xx</Text>

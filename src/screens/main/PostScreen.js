@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StatusBar,
-  Image,
+    // Image,
 } from 'react-native';
 import LocationIcon from '../../assets/icons/location-from.svg';
 import GreenLocationIcon from '../../assets/icons/location-icon.svg';
@@ -17,6 +17,7 @@ import MessageIcon from '../../assets/icons/message-bubble-icon.svg';
 import CheckIcon from '../../assets/icons/check-success.svg';
 import ArrowRightIcon from '../../assets/icons/arrow-right.svg';
 import DateIcon from '../../assets/icons/date-icon.svg';
+import ProfileIcon from '@/assets/icons/profile-icon.svg';
 
 // Vehicle SVGs
 import MotorcycleSvg from '../../assets/images/motorcycle.svg';
@@ -36,8 +37,7 @@ const transfersData = [
     from: 'KESTEL Ahmet Vefikpaşa OSB Mahallesi, Bursa Caddesi No:73, Kestel/Bursa.',
     to: 'Gözede, 16450 Kestel/Bursa',
     dateTime: '12.00',
-    totalAmount: '580 TL',
-    courierImage: require('../../assets/images/profile-photo-3a68ba.png'),
+  totalAmount: '580 TL',
   },
   {
     id: 2,
@@ -51,7 +51,7 @@ const transfersData = [
     to: 'Gözede, 16450 Kestel/Bursa',
     dateTime: '12.00/5 eylül/2025',
     totalAmount: '2850 TL',
-    courierImage: require('../../assets/images/profile-photo-3a68ba.png'),
+  // courier image replaced by profile SVG icon
   },
   {
     id: 3,
@@ -64,8 +64,7 @@ const transfersData = [
     from: 'KESTEL Ahmet Vefikpaşa OSB Mahallesi, Bursa Caddesi No:73, Kestel/Bursa.',
     to: 'Gözede, 16450 Kestel/Bursa',
     dateTime: '12.00/5 eylül/2025',
-    totalAmount: '1850 TL',
-    courierImage: require('../../assets/images/profile-photo-3a68ba.png'),
+  totalAmount: '1850 TL',
   },
 ];
 
@@ -238,10 +237,7 @@ const TransferCard = ({transfer}) => {
         {/* Left - Courier Info */}
         <View style={styles.courierSection}>
           <View style={styles.courierImage}>
-            <Image
-              source={transfer.courierImage}
-              style={styles.courierImageReal}
-            />
+            <ProfileIcon width={22} height={22} />
           </View>
           <View style={styles.courierTextInfo}>
             <Text style={styles.courierName}>{transfer.courierName}</Text>

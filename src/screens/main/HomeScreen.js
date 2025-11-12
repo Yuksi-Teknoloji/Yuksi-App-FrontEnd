@@ -19,6 +19,7 @@ import MinivanSvg from '../../assets/images/minivan.svg';
 import PanelvanSvg from '../../assets/images/panelvan.svg';
 import TruckSvg from '../../assets/images/truck.svg';
 import PickupTruckSvg from '../../assets/images/pickup-truck.svg';
+import ProfileIcon from '@/assets/icons/profile-icon.svg';
 
 import VehicleInfoCard from '../../components/VehicleInfoCard';
 
@@ -117,10 +118,9 @@ const HomeScreen = ({navigation}) => {
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <View style={styles.userInfo}>
-            <Image
-              source={require('@/assets/images/profile-photo-3a68ba.png')}
-              style={styles.profilePhoto}
-            />
+            <View style={styles.profilePhoto}>
+              <ProfileIcon width={22} height={22} />
+            </View>
             <View style={styles.greetingContainer}>
               <Text style={styles.greeting}>Hoşgeldin,</Text>
               <Text style={styles.userName}>Rıdvan Berat Çalış</Text>
@@ -192,7 +192,7 @@ const HomeScreen = ({navigation}) => {
             onPress={() => navigation.navigate('VehicleCategory')}>
             <Text style={styles.actionButtonText}>Ticarim</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButtonGroup}>
+          <TouchableOpacity style={styles.actionButtonGroup} onPress={() => navigation.navigate('YukOlustur')}>
             <LoadIcon width={16} height={20} />
             <Text style={styles.orangeActionButtonText}>Yük Oluştur</Text>
           </TouchableOpacity>
