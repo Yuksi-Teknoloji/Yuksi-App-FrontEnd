@@ -1,5 +1,6 @@
 import React, {createContext, useContext, useReducer, useEffect} from 'react';
 import {getItem, setItem, removeItem} from '../utils/storage';
+import { useAuthStore } from '../store/authStore';
 
 const AuthContext = createContext();
 
@@ -79,13 +80,17 @@ export const AuthProvider = ({children}) => {
       }
     },
     signUp: async ({ navigation, data }) => {
-      // Gerçek API çağrısı burada olacak (mock)
+      // Kullanıcı kayıt akışı: Zustand store üzerinden API'ye bağlan
       try {
-        const userToken = 'dummy-auth-token';
-        await setItem('userToken', userToken);
-        // Onboarding gösterilecek: token kaydedildi fakat hemen SIGN_IN dispatch etmiyoruz.
-        // SIGN_IN onboarding bittiğinde tetiklenecek.
-        navigation.replace('Onboarding');
+        const { register } = useAuthStore.getState();
+        const result = await register(data);
+        if (result.ok) {
+          // Kayıt başarılı, onboarding'e yönlendir
+          // Not: API token döndürürse burada setItem ve SIGN_IN akışı güncellenebilir
+          navigation.replace('Onboarding');
+        } else {
+          console.log('Sign up failed:', result.error);
+        }
       } catch (error) {
         console.log('Sign up error:', error);
       }
