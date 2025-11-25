@@ -13,6 +13,7 @@ import ModelSelectScreen from '../screens/main/ModelSelectScreen';
 import YukOlusturScreen from '../screens/main/YukOlusturScreen';
 import YukOlusturResultScreen from '../screens/main/YukOlusturResultScreen';
 import CarrierFlow2Screen from '../screens/main/CarrierFlow2Screen';
+import KanguruChatScreen from '../screens/main/KanguruChatScreen';
 
 // SVG ikonları import et - normal ve pressed versiyonları
 import HomeIcon from '../assets/icons/home-icon.svg';
@@ -124,6 +125,7 @@ const MainStack = () => {
   <Stack.Screen name="YukOlusturResult" component={YukOlusturResultScreen} />
       {/* The user requested navigation to 'carrier flow2' (with a space), so we register that exact route name. */}
       <Stack.Screen name="carrier flow2" component={CarrierFlow2Screen} />
+      <Stack.Screen name="KanguruChat" component={KanguruChatScreen} />
     </Stack.Navigator>
   );
 };

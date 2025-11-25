@@ -11,13 +11,31 @@ import {
 import YuksiLogo from '../../assets/images/yuksi-vektor-logo.svg';
 import {Checkbox} from 'expo-checkbox';
 import {useAuth} from '../../context/AuthContext';
+import { useAuthStore } from '../../store/authStore';
 import PhoneInput from 'react-native-phone-number-input';
 
 const RegisterScreen = ({navigation}) => {
   const {signUp} = useAuth();
+  const registering = useAuthStore(state => state.registering);
+  const registerError = useAuthStore(state => state.registerError);
   const [isChecked, setIsChecked] = useState(false);
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [countryCode, setCountryCode] = useState('TR');
+
+  const handleRegister = () => {
+    const payload = {
+      email: email.trim(),
+      password,
+      phone: phoneNumber, // Consider formatting to E.164 if needed
+      first_name: firstName.trim(),
+      last_name: lastName.trim(),
+    };
+    signUp({ navigation, data: payload });
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -52,6 +70,8 @@ const RegisterScreen = ({navigation}) => {
                     style={styles.textInput}
                     placeholder="İsim giriniz"
                     placeholderTextColor="#999"
+                    value={firstName}
+                    onChangeText={setFirstName}
                   />
                 </View>
               </View>
@@ -62,6 +82,8 @@ const RegisterScreen = ({navigation}) => {
                     style={styles.textInput}
                     placeholder="Soy İsim giriniz"
                     placeholderTextColor="#999"
+                    value={lastName}
+                    onChangeText={setLastName}
                   />
                 </View>
               </View>
@@ -104,6 +126,9 @@ const RegisterScreen = ({navigation}) => {
                   placeholder="E-mail adresinizi girin"
                   placeholderTextColor="#999"
                   keyboardType="email-address"
+                  autoCapitalize="none"
+                  value={email}
+                  onChangeText={setEmail}
                 />
               </View>
             </View>
@@ -117,6 +142,8 @@ const RegisterScreen = ({navigation}) => {
                   placeholder="Şifrenizi girin"
                   placeholderTextColor="#999"
                   secureTextEntry
+                  value={password}
+                  onChangeText={setPassword}
                 />
               </View>
             </View>
@@ -134,10 +161,15 @@ const RegisterScreen = ({navigation}) => {
             </View>
 
             {/* Register Button */}
+            {registerError ? (
+              <Text style={styles.errorText}>{registerError}</Text>
+            ) : null}
+
             <TouchableOpacity
-              style={styles.registerButton}
-              onPress={() => signUp({ navigation, data: {} })}>
-              <Text style={styles.registerButtonText}>Kayıt Ol</Text>
+              style={[styles.registerButton, registering && { opacity: 0.6 }]}
+              disabled={registering}
+              onPress={handleRegister}>
+              <Text style={styles.registerButtonText}>{registering ? 'Kaydediliyor…' : 'Kayıt Ol'}</Text>
             </TouchableOpacity>
 
             {/* Have an account */}
@@ -319,6 +351,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
     lineHeight: 29,
+  },
+  errorText: {
+    color: '#D32F2F',
+    textAlign: 'center',
+    marginTop: 8,
+    marginBottom: 4,
   },
   registerContainer: {
     alignItems: 'center',

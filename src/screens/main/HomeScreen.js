@@ -196,7 +196,7 @@ const HomeScreen = ({navigation}) => {
             <LoadIcon width={16} height={20} />
             <Text style={styles.orangeActionButtonText}>Yük Oluştur</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButtonGroup}>
+          <TouchableOpacity style={styles.actionButtonGroup} onPress={() => navigation.navigate('KanguruChat')}>
             <KangorooIcon width={24} height={24} />
             <Text style={styles.orangeActionButtonText}>Kanguru</Text>
           </TouchableOpacity>
