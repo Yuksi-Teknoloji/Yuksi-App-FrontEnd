@@ -11,4 +11,10 @@ export const userApi = {
       last_name,
     });
   },
+  login: async ({ email, password }) => {
+    return apiClient.post(ENDPOINTS.login, {
+      email,
+      password,
+    });
+  },
 };

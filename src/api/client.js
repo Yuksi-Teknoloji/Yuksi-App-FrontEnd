@@ -31,12 +31,24 @@ async function request(path, { method = 'GET', headers = {}, body, timeoutMs = 1
     const data = isJson ? await res.json() : await res.text();
 
     if (!res.ok) {
-      const message = isJson ? (data?.message || data?.error || 'Request failed') : (typeof data === 'string' ? data : 'Request failed');
+      let message = 'Request failed';
+      if (isJson) {
+        // Try multiple common error message fields
+        message = data?.message || data?.error || data?.errorMessage || data?.msg || 'Request failed';
+        // Handle validation errors array
+        if (data?.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+          message = data.errors.map(e => e.message || e.msg || e).join(', ');
+        }
+      } else if (typeof data === 'string' && data.trim()) {
+        message = data;
+      }
+      
       const error = new Error(message);
       error.status = res.status;
       error.data = data;
       throw error;
     }
+    console.log('API Response Data:', data);
 
     return data;
   } catch (err) {
