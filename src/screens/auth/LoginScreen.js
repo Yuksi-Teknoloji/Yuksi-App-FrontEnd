@@ -1,4 +1,4 @@
-import React, {useEffect, useRef} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   View,
   Text,
@@ -11,11 +11,59 @@ import {
   SafeAreaView,
 } from 'react-native';
 import {useAuth} from '../../context/AuthContext';
+import { useAuthStore } from '../../store/authStore';
 import YuksiLogo from '../../assets/images/yuksi-vektor-logo.svg';
 
 const LoginScreen = ({navigation}) => {
   const {signIn} = useAuth();
+  const signingIn = useAuthStore(state => state.signingIn);
+  const signInError = useAuthStore(state => state.signInError);
+  const clearSignInState = useAuthStore(state => state.clearSignInState);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [validationError, setValidationError] = useState('');
   const motorAnimation = useRef(new Animated.Value(300)).current; // Başlangıç pozisyonu sağ dışından
+
+  const validateInputs = () => {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setValidationError('E-posta adresi gerekli.');
+      return false;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setValidationError('Geçerli bir e-posta adresi girin.');
+      return false;
+    }
+    if (!password) {
+      setValidationError('Şifre gerekli.');
+      return false;
+    }
+    if (password.length < 6) {
+      setValidationError('Şifre en az 6 karakter olmalıdır.');
+      return false;
+    }
+    setValidationError('');
+    return true;
+  };
+
+  const handleSignIn = async () => {
+    if (!validateInputs()) return;
+    
+    const result = await signIn({ email: email.trim(), password });
+    
+    // Only navigate on successful login
+    if (!result || !result.ok) {
+      // Error is already set in store, just ensure user stays on login screen
+      console.log('Login failed, staying on login screen');
+    }
+    // If successful, the auth state change will trigger navigation via AppNavigator
+  };
+
+  useEffect(() => {
+    // Clear errors when user starts typing
+    if (validationError) setValidationError('');
+    if (signInError) clearSignInState();
+  }, [email, password]);
 
   useEffect(() => {
     // Motor animation - from right to center
@@ -58,6 +106,10 @@ const LoginScreen = ({navigation}) => {
                   style={styles.textInput}
                   placeholder="E-mail adresinizi girin"
                   placeholderTextColor="#999"
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  value={email}
+                  onChangeText={setEmail}
                 />
               </View>
             </View>
@@ -71,15 +123,25 @@ const LoginScreen = ({navigation}) => {
                   placeholder="Şifrenizi girin"
                   placeholderTextColor="#999"
                   secureTextEntry
+                  value={password}
+                  onChangeText={setPassword}
                 />
               </View>
             </View>
 
+            {/* Error */}
+            {(validationError || signInError) ? (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{validationError || signInError}</Text>
+              </View>
+            ) : null}
+
             {/* Login Button */}
             <TouchableOpacity
-              style={styles.loginButton}
-              onPress={() => signIn()}>
-              <Text style={styles.loginButtonText}>Giriş Yap</Text>
+              style={[styles.loginButton, (signingIn || !email || !password) && { opacity: 0.6 }]}
+              disabled={signingIn || !email || !password}
+              onPress={handleSignIn}>
+              <Text style={styles.loginButtonText}>{signingIn ? 'Giriş Yapılıyor…' : 'Giriş Yap'}</Text>
             </TouchableOpacity>
 
             {/* Register Link */}
@@ -219,6 +281,23 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
     lineHeight: 29,
+  },
+  errorContainer: {
+    backgroundColor: '#FFEBEE',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginTop: 12,
+    marginBottom: 4,
+    borderLeftWidth: 3,
+    borderLeftColor: '#D32F2F',
+  },
+  errorText: {
+    color: '#D32F2F',
+    fontFamily: 'Urbanist',
+    fontSize: 14,
+    fontWeight: '500',
+    lineHeight: 18,
   },
   registerContainer: {
     alignItems: 'center',
