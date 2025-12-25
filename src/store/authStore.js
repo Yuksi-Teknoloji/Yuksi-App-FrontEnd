@@ -69,8 +69,9 @@ export const useAuthStore = create((set, get) => ({
   // Sign-in flow
   async signIn({ email, password }) {
     set({ signingIn: true, signInError: null });
+          console.log('before request')
+
     try {
-      console.log('before request')
       const res = await userApi.login({ email, password });
       
       // Only proceed if we have a valid token
@@ -78,7 +79,7 @@ export const useAuthStore = create((set, get) => ({
       //   throw new Error('Token bulunamadı. Lütfen tekrar deneyin.');
       // }
       console.log('Login successful, response:', res);
-      const token = res.token;
+      const token = res.data.accessToken;
       await setItem('userToken', token);
       set({ 
         signInResponse: res, 
