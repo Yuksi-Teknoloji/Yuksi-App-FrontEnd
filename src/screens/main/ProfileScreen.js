@@ -3,11 +3,11 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
-  Image,
+  StatusBar,
 } from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 
 // Import SVG icons
 import ChevronRightIcon from '@/assets/images/chevron-right.svg';
@@ -19,10 +19,10 @@ import HistoryIcon from '@/assets/images/history-icon.svg';
 import LogoutIcon from '@/assets/images/logout-icon.svg';
 import DeleteAccountIcon from '@/assets/images/delete-account-icon.svg';
 import ProfileIcon from '@/assets/icons/profile-icon.svg';
-import { useAuth } from '../../context/AuthContext';
+import {useAuth} from '../../context/AuthContext';
 
 const ProfileScreen = () => {
-  const { signOut } = useAuth();
+  const {signOut} = useAuth();
   const menuItems = [
     {
       id: 'profile-settings',
@@ -151,33 +151,44 @@ const ProfileScreen = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton}>
-          <ChevronRightIcon
-            width={8}
-            height={16}
-            stroke="#FF5B04"
-            strokeWidth={2}
-            style={styles.backIcon}
-          />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Profilim</Text>
-      </View>
+    <View style={styles.container}>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="#FFFFFF"
+        translucent={false}
+      />
+      <SafeAreaView style={styles.safeArea} edges={[]}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton}>
+            <ChevronRightIcon
+              width={8}
+              height={16}
+              stroke="#FF5B04"
+              strokeWidth={2}
+              style={styles.backIcon}
+            />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Profilim</Text>
+        </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}>
-        <ProfileCard />
-        <SettingsCard />
-      </ScrollView>
-    </SafeAreaView>
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}>
+          <ProfileCard />
+          <SettingsCard />
+        </ScrollView>
+      </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  safeArea: {
     flex: 1,
     backgroundColor: '#F5F6FC',
   },
@@ -185,7 +196,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 29,
-    paddingTop: 15,
+    paddingTop: 60,
     paddingBottom: 15,
     backgroundColor: '#FFFFFF',
     borderBottomLeftRadius: 10,

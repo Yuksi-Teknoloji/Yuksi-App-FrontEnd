@@ -192,11 +192,15 @@ const HomeScreen = ({navigation}) => {
             onPress={() => navigation.navigate('VehicleCategory')}>
             <Text style={styles.actionButtonText}>Ticarim</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButtonGroup} onPress={() => navigation.navigate('YukOlustur')}>
+          <TouchableOpacity
+            style={styles.actionButtonGroup}
+            onPress={() => navigation.navigate('YukOlustur')}>
             <LoadIcon width={16} height={20} />
             <Text style={styles.orangeActionButtonText}>Yük Oluştur</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButtonGroup} onPress={() => navigation.navigate('KanguruChat')}>
+          <TouchableOpacity
+            style={styles.actionButtonGroup}
+            onPress={() => navigation.navigate('KanguruChat')}>
             <KangorooIcon width={24} height={24} />
             <Text style={styles.orangeActionButtonText}>Kanguru</Text>
           </TouchableOpacity>
@@ -326,9 +330,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 27,
     marginBottom: 30,
   },
-  vehicleSelectorContent: {
-    paddingRight: 27,
-  },
+  vehicleSelectorContent: {},
   vehicleButton: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1,

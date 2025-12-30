@@ -33,7 +33,7 @@
 		<true/>
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+	<string>Konumunuzu teslimat adresi olarak kullanabilmek için izin gerekiyor.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Fotoğraflarınıza erişerek yükleyeceğiniz görselleri seçebilmemiz için izin gerekiyor.</string>
 	<key>NSCameraUsageDescription</key>

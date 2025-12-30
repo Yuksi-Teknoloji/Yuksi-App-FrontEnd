@@ -22,9 +22,13 @@ import BoxIcon from '@/assets/icons/box-icon.svg';
 import ProfileIcon from '@/assets/icons/profile-icon.svg';
 import LocationFromIcon from '@/assets/icons/location-from.svg';
 import CameraIcon from '@/assets/icons/camera-icon.svg';
+import ClockIcon from '@/assets/icons/clock-icon.svg';
 import ImageCropPicker from 'react-native-image-crop-picker';
 import PaymentIcon from '@/assets/images/payment-icon.svg';
 import LabeledInput from './components/LabeledInput';
+import LocationPickerInput from './components/LocationPickerInput';
+import AddressDetailFields from './components/AddressDetailFields';
+import DateTimePickerField from './components/DateTimePickerField';
 import NotesTextArea from './components/NotesTextArea';
 import UploadImageField from './components/UploadImageField';
 import CouponRow from './components/CouponRow';
@@ -34,7 +38,7 @@ import SubmitButton from './components/SubmitButton';
 
 // Wider page width to accommodate larger vehicle icons while keeping side peek
 // Transparent, outlined switch with orange borders
-const OutlineSwitch = ({ value, onValueChange }) => {
+const OutlineSwitch = ({value, onValueChange}) => {
   const anim = React.useRef(new Animated.Value(value ? 1 : 0)).current;
   React.useEffect(() => {
     Animated.timing(anim, {
@@ -44,24 +48,28 @@ const OutlineSwitch = ({ value, onValueChange }) => {
     }).start();
   }, [value]);
 
-  const translateX = anim.interpolate({ inputRange: [0, 1], outputRange: [0, 20] });
+  const translateX = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 20],
+  });
 
   return (
     <TouchableOpacity
       activeOpacity={0.8}
       onPress={() => onValueChange?.(!value)}
       accessibilityRole="switch"
-      accessibilityState={{ checked: value }}
+      accessibilityState={{checked: value}}
       style={styles.outlineSwitchTrack}
-      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-    >
-      <Animated.View style={[styles.outlineSwitchThumb, { transform: [{ translateX }] }]} />
+      hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
+      <Animated.View
+        style={[styles.outlineSwitchThumb, {transform: [{translateX}]}]}
+      />
     </TouchableOpacity>
   );
 };
 const PAGE_WIDTH = Math.min(
   window.width,
-  Math.max(344, Math.floor(window.width * 0.8))
+  Math.max(344, Math.floor(window.width * 0.8)),
 );
 
 const YukOlusturScreen = ({navigation}) => {
@@ -70,6 +78,15 @@ const YukOlusturScreen = ({navigation}) => {
   const [nameValue, setNameValue] = React.useState('');
   const [fromValue, setFromValue] = React.useState('');
   const [toValue, setToValue] = React.useState('');
+  // Date and time for randevulu option
+  const [appointmentDate, setAppointmentDate] = React.useState(null);
+  const [appointmentTime, setAppointmentTime] = React.useState(null);
+  // Location data with coordinates
+  const [fromLocation, setFromLocation] = React.useState(null);
+  const [toLocation, setToLocation] = React.useState(null);
+  // Address detail fields
+  const [fromAddressDetails, setFromAddressDetails] = React.useState(null);
+  const [toAddressDetails, setToAddressDetails] = React.useState(null);
   // Dropdown state
   const [openDropdown, setOpenDropdown] = React.useState(null); // 'left' | 'right' | null
   const [leftSelection, setLeftSelection] = React.useState(null);
@@ -102,7 +119,7 @@ const YukOlusturScreen = ({navigation}) => {
     });
   };
 
-  const openModal = (which) => {
+  const openModal = which => {
     setOpenDropdown(which);
     Animated.timing(modalAnim, {
       toValue: 1,
@@ -122,10 +139,13 @@ const YukOlusturScreen = ({navigation}) => {
   const requestPhotoPermission = async () => {
     if (Platform.OS !== 'android') return true;
     try {
-      const sdk = Platform.constants?.Release ? parseInt(Platform.constants.Release, 10) : undefined;
+      const sdk = Platform.constants?.Release
+        ? parseInt(Platform.constants.Release, 10)
+        : undefined;
       // Use API level via PermissionsAndroid if available
       const apiLevel = Platform.Version;
-      const isTiramisuPlus = typeof apiLevel === 'number' ? apiLevel >= 33 : (sdk ? sdk >= 13 : true);
+      const isTiramisuPlus =
+        typeof apiLevel === 'number' ? apiLevel >= 33 : sdk ? sdk >= 13 : true;
       const perm = isTiramisuPlus
         ? PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES
         : PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE;
@@ -148,7 +168,8 @@ const YukOlusturScreen = ({navigation}) => {
       if (res && res.path) {
         setPickedImage(res);
         // Derive a display name from path if filename is not provided
-        const name = res.filename || res.path.split('/').pop() || 'Seçilen fotoğraf';
+        const name =
+          res.filename || res.path.split('/').pop() || 'Seçilen fotoğraf';
         setPickedImageName(name);
       }
     } catch (e) {
@@ -179,12 +200,46 @@ const YukOlusturScreen = ({navigation}) => {
     }
   };
 
+  const validateAddressDetails = (details, locationName) => {
+    const errors = [];
+    if (!details) {
+      errors.push(`${locationName} adres detayları eksik`);
+      return errors;
+    }
+    if (!details.city?.trim())
+      errors.push(`${locationName} - Şehir gerekli`);
+    if (!details.district?.trim())
+      errors.push(`${locationName} - İlçe gerekli`);
+    if (!details.neighbourhood?.trim())
+      errors.push(`${locationName} - Mahalle gerekli`);
+    if (!details.street?.trim())
+      errors.push(`${locationName} - Sokak/Cadde gerekli`);
+    if (!details.buildingNumber?.trim())
+      errors.push(`${locationName} - Bina No gerekli`);
+    if (!details.floor?.trim())
+      errors.push(`${locationName} - Kat gerekli`);
+    if (!details.apartmentNumber?.trim())
+      errors.push(`${locationName} - Daire No gerekli`);
+    return errors;
+  };
+
   const handleSubmit = async () => {
     // Basic validation
     const errors = [];
     if (!nameValue.trim()) errors.push('Ad Soyad gerekli');
     if (!fromValue.trim()) errors.push('Çıkış Konumu gerekli');
     if (!toValue.trim()) errors.push('Varış Konumu gerekli');
+
+    // Validate address details
+    errors.push(...validateAddressDetails(fromAddressDetails, 'Çıkış'));
+    errors.push(...validateAddressDetails(toAddressDetails, 'Varış'));
+
+    // Validate date/time for randevulu option
+    if (selectedRadio === '2') {
+      if (!appointmentDate) errors.push('Randevu tarihi gerekli');
+      if (!appointmentTime) errors.push('Randevu saati gerekli');
+    }
+
     if (!leftSelection) errors.push('Kapasite seçin');
     if (!rightSelection) errors.push('Tur seçin');
     if (!totalAmount.trim()) errors.push('Tutar girin');
@@ -196,9 +251,31 @@ const YukOlusturScreen = ({navigation}) => {
 
     const payload = {
       teslimatTipi: selectedRadio === '1' ? 'hemen' : 'randevulu',
+      randevuTarihi:
+        selectedRadio === '2' && appointmentDate
+          ? appointmentDate.toISOString()
+          : null,
+      randevuSaati:
+        selectedRadio === '2' && appointmentTime
+          ? appointmentTime.toISOString()
+          : null,
       adSoyad: nameValue.trim(),
       cikis: fromValue.trim(),
+      cikisKoordinat: fromLocation
+        ? {
+            latitude: fromLocation.latitude,
+            longitude: fromLocation.longitude,
+          }
+        : null,
+      cikisDetay: fromAddressDetails,
       varis: toValue.trim(),
+      varisKoordinat: toLocation
+        ? {
+            latitude: toLocation.latitude,
+            longitude: toLocation.longitude,
+          }
+        : null,
+      varisDetay: toAddressDetails,
       kapasite: leftSelection?.label,
       tur: rightSelection?.label,
       resim: pickedImage?.path || null,
@@ -236,24 +313,43 @@ const YukOlusturScreen = ({navigation}) => {
         style={styles.topGradient}
       />
 
-      <SafeAreaView style={styles.safeArea} pointerEvents={openDropdown ? 'none' : 'auto'}>
-        {/* Fixed ellipse base under vehicles */}
-        <View pointerEvents="none" style={styles.staticEllipse} />
+      <SafeAreaView
+        style={[styles.safeArea, {paddingTop: Platform.OS === 'ios' ? 0 : 40}]}
+        pointerEvents={openDropdown ? 'none' : 'auto'}>
+        {/* Fixed header - vehicle name, stays at top */}
+        <View pointerEvents="none" style={styles.fixedHeader}>
+          <Text style={styles.fixedHeaderText}>
+            {vehicleItems[activeVehicleIndex]?.name ?? ''}
+          </Text>
+        </View>
 
-        {/* Fixed header: carousel + action pill do not scroll */}
-        <View style={styles.headerFixed}>
-          {/* Manual Animated Carousel */}
+        {/* Scrollable content - carousel, pill, and forms all scroll */}
+        <ScrollView
+          style={styles.scrollArea}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}>
+          {/* Fixed ellipse base under vehicles */}
+          <View pointerEvents="none" style={styles.staticEllipse} />
+
+          {/* Carousel - scrolls with content */}
           <CarouselRN onActiveIndexChange={setActiveVehicleIndex} />
 
           {/* Action pill under carousel */}
-          <TouchableOpacity style={styles.actionPillWrapper} activeOpacity={0.9} onPress={togglePill}>
+          <TouchableOpacity
+            style={styles.actionPillWrapper}
+            activeOpacity={0.9}
+            onPress={togglePill}>
             <View style={styles.actionPill}>
               <Animated.Text
                 style={[
                   styles.actionPillLabel,
-                  { opacity: pillSlide.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) },
-                ]}
-              >
+                  {
+                    opacity: pillSlide.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [1, 0],
+                    }),
+                  },
+                ]}>
                 Yük Tarat
               </Animated.Text>
               {/* Moving circle that slides left <-> right and spins the icon */}
@@ -261,64 +357,174 @@ const YukOlusturScreen = ({navigation}) => {
                 style={[
                   styles.movingCircle,
                   {
-                    transform: [{ translateX: pillSlide.interpolate({ inputRange: [0,1], outputRange: [0, 80] }) }],
+                    transform: [
+                      {
+                        translateX: pillSlide.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, 80],
+                        }),
+                      },
+                    ],
                   },
-                ]}
-              >
+                ]}>
                 {/* Crossfade background colors to animate orange -> green while moving */}
-                <Animated.View style={[styles.circleFill, { backgroundColor: '#FF5B04', opacity: pillSlide.interpolate({ inputRange:[0,1], outputRange:[1,0] }) }]} />
-                <Animated.View style={[styles.circleFill, { backgroundColor: '#22C55E', opacity: pillSlide.interpolate({ inputRange:[0,1], outputRange:[0,1] }) }]} />
+                <Animated.View
+                  style={[
+                    styles.circleFill,
+                    {
+                      backgroundColor: '#FF5B04',
+                      opacity: pillSlide.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [1, 0],
+                      }),
+                    },
+                  ]}
+                />
+                <Animated.View
+                  style={[
+                    styles.circleFill,
+                    {
+                      backgroundColor: '#22C55E',
+                      opacity: pillSlide.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, 1],
+                      }),
+                    },
+                  ]}
+                />
                 <Animated.View
                   style={{
                     transform: [
-                      { rotate: pillSlide.interpolate({ inputRange: [0,1], outputRange: ['0deg', '270deg'] }) },
+                      {
+                        rotate: pillSlide.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: ['0deg', '270deg'],
+                        }),
+                      },
                     ],
-                  }}
-                >
+                  }}>
                   <BoxIcon width={22} height={22} />
                 </Animated.View>
               </Animated.View>
             </View>
           </TouchableOpacity>
-        </View>
 
-        {/* Scrollable content starts after the capsule */}
-        <ScrollView style={styles.scrollArea} showsVerticalScrollIndicator={false}>
           {/* Radio group under pill */}
           <View style={styles.radioGroupRow}>
-            <TouchableOpacity activeOpacity={0.8} onPress={() => setSelectedRadio('1')} style={styles.radioBox}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => {
+                setSelectedRadio('1');
+                setAppointmentDate(null);
+                setAppointmentTime(null);
+              }}
+              style={styles.radioBox}>
               <View style={styles.radioItem}>
                 <View style={styles.radioCircle}>
-                  {selectedRadio==='1' && <View style={styles.radioInnerDot} />}
+                  {selectedRadio === '1' && (
+                    <View style={styles.radioInnerDot} />
+                  )}
                 </View>
                 <Text style={styles.radioLabel}>Hemen</Text>
               </View>
             </TouchableOpacity>
-            <TouchableOpacity activeOpacity={0.8} onPress={() => setSelectedRadio('2')} style={styles.radioBox}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setSelectedRadio('2')}
+              style={styles.radioBox}>
               <View style={styles.radioItem}>
                 <View style={styles.radioCircle}>
-                  {selectedRadio==='2' && <View style={styles.radioInnerDot} />}
+                  {selectedRadio === '2' && (
+                    <View style={styles.radioInnerDot} />
+                  )}
                 </View>
                 <Text style={styles.radioLabel}>Randevulu</Text>
               </View>
             </TouchableOpacity>
           </View>
 
+          {/* Date and time pickers for randevulu option */}
+          {selectedRadio === '2' && (
+            <View style={styles.dateTimeWrapper}>
+              <DateTimePickerField
+                label="Tarih Seçin"
+                placeholder="GG.AA.YYYY"
+                icon={ClockIcon}
+                value={appointmentDate}
+                onChange={setAppointmentDate}
+                mode="date"
+              />
+              <DateTimePickerField
+                label="Saat Seçin"
+                placeholder="SS:DD"
+                icon={ClockIcon}
+                value={appointmentTime}
+                onChange={setAppointmentTime}
+                mode="time"
+              />
+            </View>
+          )}
+
           {/* Text boxes under radio group */}
           <View style={styles.textBoxesWrapper}>
-            <LabeledInput label="Ad Soyad" placeholder="Ad Soyad" icon={ProfileIcon} value={nameValue} onChangeText={setNameValue} invisibleLabel />
-            <LabeledInput label="Çıkış Konumu" placeholder="Çıkış Konumu" icon={LocationFromIcon} value={fromValue} onChangeText={setFromValue} />
-            <LabeledInput label="Varış Konumu" placeholder="Varış Konumu" icon={LocationFromIcon} value={toValue} onChangeText={setToValue} />
+            <LabeledInput
+              label="Ad Soyad"
+              placeholder="Ad Soyad"
+              icon={ProfileIcon}
+              value={nameValue}
+              onChangeText={setNameValue}
+              invisibleLabel
+            />
+            <LocationPickerInput
+              label="Çıkış Konumu"
+              placeholder="Çıkış Konumu"
+              icon={LocationFromIcon}
+              value={fromValue}
+              onLocationSelect={location => {
+                setFromLocation(location);
+                setFromValue(location.address);
+                setFromAddressDetails(location.addressDetails || null);
+              }}
+            />
+            {fromAddressDetails && (
+              <AddressDetailFields
+                addressDetails={fromAddressDetails}
+                onAddressDetailsChange={setFromAddressDetails}
+              />
+            )}
+            <LocationPickerInput
+              label="Varış Konumu"
+              placeholder="Varış Konumu"
+              icon={LocationFromIcon}
+              value={toValue}
+              onLocationSelect={location => {
+                setToLocation(location);
+                setToValue(location.address);
+                setToAddressDetails(location.addressDetails || null);
+              }}
+            />
+            {toAddressDetails && (
+              <AddressDetailFields
+                addressDetails={toAddressDetails}
+                onAddressDetailsChange={setToAddressDetails}
+              />
+            )}
           </View>
 
           {/* Inline dropdown triggers */}
           <View style={styles.dropdownRow}>
-            <TouchableOpacity style={styles.dropdownTrigger} activeOpacity={0.8} onPress={() => openModal('left')}>
+            <TouchableOpacity
+              style={styles.dropdownTrigger}
+              activeOpacity={0.8}
+              onPress={() => openModal('left')}>
               <Text style={styles.dropdownTriggerText} numberOfLines={1}>
                 {leftSelection?.label || 'Kapasite Seç'}
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.dropdownTrigger} activeOpacity={0.8} onPress={() => openModal('right')}>
+            <TouchableOpacity
+              style={styles.dropdownTrigger}
+              activeOpacity={0.8}
+              onPress={() => openModal('right')}>
               <Text style={styles.dropdownTriggerText} numberOfLines={1}>
                 {rightSelection?.label || 'Tur Seç'}
               </Text>
@@ -334,12 +540,21 @@ const YukOlusturScreen = ({navigation}) => {
           />
 
           {/* Notes textarea at the end */}
-          <NotesTextArea label="teleplerinizi Yadin" placeholder="teleplerinizi Yadin" value={notesValue} onChangeText={setNotesValue} />
+          <NotesTextArea
+            label="Taleplerinizi Yazın"
+            placeholder="Taleplerinizi Yazın"
+            value={notesValue}
+            onChangeText={setNotesValue}
+          />
 
           {/* Coupon row */}
           <CouponRow
             value={couponValue}
-            onChangeText={(t) => { setCouponValue(t); setCouponApplied(false); setCouponError(null); }}
+            onChangeText={t => {
+              setCouponValue(t);
+              setCouponApplied(false);
+              setCouponError(null);
+            }}
             onApply={handleApplyCoupon}
             applying={couponApplying}
             applied={couponApplied}
@@ -348,80 +563,123 @@ const YukOlusturScreen = ({navigation}) => {
           />
 
           {/* Option switch row */}
-          <OptionSwitchRow label="Seçenek" value={radioRowSelected} onValueChange={setRadioRowSelected} />
+          <OptionSwitchRow
+            label="Seçenek"
+            value={radioRowSelected}
+            onValueChange={setRadioRowSelected}
+          />
 
           {/* Split total row */}
-          <SplitTotalRow Icon={PaymentIcon} label="toplam Tutar" value={totalAmount} onChangeText={setTotalAmount} />
+          <SplitTotalRow
+            Icon={PaymentIcon}
+            label="Toplam Tutar"
+            value={totalAmount}
+            onChangeText={setTotalAmount}
+          />
 
           {/* Submit button at the bottom */}
           <SubmitButton
             title="Gönder"
             onPress={async () => {
               const ok = await handleSubmit();
-              if (ok) navigation.navigate('YukOlusturResult', { startIndex: activeVehicleIndex });
+              if (ok) {
+                // Navigate with autoProgress flag for 5-second auto loading
+                navigation.navigate('YukOlusturResult', {
+                  startIndex: activeVehicleIndex,
+                  autoProgress: true,
+                });
+              }
             }}
             loading={submitting}
             disabled={false}
           />
-
         </ScrollView>
       </SafeAreaView>
       {/* Modal overlay for dropdowns */}
       {openDropdown && (
-        <View pointerEvents="box-none" style={[StyleSheet.absoluteFill, styles.modalOverlay]}>
+        <View
+          pointerEvents="box-none"
+          style={[StyleSheet.absoluteFill, styles.modalOverlay]}>
           {/* Backdrop */}
           <Animated.View
             pointerEvents="auto"
-            style={[StyleSheet.absoluteFill, styles.backdrop,
-              {opacity: modalAnim.interpolate({inputRange:[0,1], outputRange:[0,0.4]})}
+            style={[
+              StyleSheet.absoluteFill,
+              styles.backdrop,
+              {
+                opacity: modalAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 0.4],
+                }),
+              },
             ]}
             onStartShouldSetResponder={() => true}
             onResponderRelease={closeModal}
           />
           {/* Centered modal content */}
           <View style={styles.modalCenterWrap} pointerEvents="box-none">
-            <Animated.View style={[styles.modalCard,
-              {
-                transform: [
-                  {translateY: modalAnim.interpolate({inputRange:[0,1], outputRange:[300,0]})}
-                ],
-                opacity: modalAnim
-              }
-            ]}>
+            <Animated.View
+              style={[
+                styles.modalCard,
+                {
+                  transform: [
+                    {
+                      translateY: modalAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [300, 0],
+                      }),
+                    },
+                  ],
+                  opacity: modalAnim,
+                },
+              ]}>
               {openDropdown === 'left' ? (
                 <View style={styles.leftModalContent}>
                   <Text style={styles.modalTitle}>Moto Kurye</Text>
                   {[
-                    {key:'1 kg', value:'Hafif Yük'},
-                    {key:'5 kg', value:'Ortalama Yük'},
-                    {key:'10 kg', value:'Orta Ağır Yük'},
-                    {key:'20 kg', value:'Ağır Yük'},
+                    {key: '1 kg', value: 'Hafif Yük'},
+                    {key: '5 kg', value: 'Ortalama Yük'},
+                    {key: '10 kg', value: 'Orta Ağır Yük'},
+                    {key: '20 kg', value: 'Ağır Yük'},
                   ].map((row, idx) => (
                     <TouchableOpacity
                       key={idx}
                       activeOpacity={0.8}
-                      onPress={() => { setLeftSelection({label: row.value, key: row.key}); closeModal(); }}
-                      style={styles.kvRow}
-                    >
-                      <View style={styles.kBox}><Text style={styles.kBoxText}>{row.key}</Text></View>
-                      <View style={styles.vBox}><Text style={styles.vBoxText}>{row.value}</Text></View>
+                      onPress={() => {
+                        setLeftSelection({label: row.value, key: row.key});
+                        closeModal();
+                      }}
+                      style={styles.kvRow}>
+                      <View style={styles.kBox}>
+                        <Text style={styles.kBoxText}>{row.key}</Text>
+                      </View>
+                      <View style={styles.vBox}>
+                        <Text style={styles.vBoxText}>{row.value}</Text>
+                      </View>
                     </TouchableOpacity>
                   ))}
                 </View>
               ) : (
                 <View style={styles.rightModalContent}>
-                  {['Katı','Sıvı','Isı koronumlu','Canlı'].map((v, idx) => {
+                  {['Katı', 'Sıvı', 'Isı koronumlu', 'Canlı'].map((v, idx) => {
                     const current = rightSelection?.label;
                     const isSelected = current === v;
                     return (
                       <TouchableOpacity
                         key={idx}
                         activeOpacity={0.8}
-                        onPress={() => { setRightSelection({label: v}); closeModal(); }}
-                        style={styles.radioOptionRow}
-                      >
+                        onPress={() => {
+                          setRightSelection({label: v});
+                          closeModal();
+                        }}
+                        style={styles.radioOptionRow}>
                         <Text style={styles.modalOptionLabel}>{`${v}`}</Text>
-                        <View style={[styles.modalRadioCircle, isSelected && styles.modalRadioCircleFilled]} />
+                        <View
+                          style={[
+                            styles.modalRadioCircle,
+                            isSelected && styles.modalRadioCircleFilled,
+                          ]}
+                        />
                       </TouchableOpacity>
                     );
                   })}
@@ -469,11 +727,26 @@ const styles = StyleSheet.create({
     fontFamily: 'Urbanist',
   },
   contentArea: {
-    paddingTop: 120,
+    paddingTop: 10,
     minHeight: 400,
   },
-  headerFixed: {
-    // Contains the carousel and the action pill; stays fixed above scroll
+  fixedHeader: {
+    position: 'relative',
+    height: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+  fixedHeaderText: {
+    fontFamily: 'Urbanist',
+    fontWeight: '500',
+    fontSize: 28,
+    lineHeight: 28,
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
+  scrollContent: {
+    // No padding needed, header is in normal flow
   },
   sectionHeading: {
     fontSize: 16,
@@ -507,6 +780,7 @@ const styles = StyleSheet.create({
     height: 52,
     borderRadius: 32,
     opacity: 1,
+    marginTop: -100,
     marginBottom: 16,
     backgroundColor: '#F6F7FB',
     overflow: 'hidden',
@@ -562,6 +836,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 12,
+  },
+  dateTimeWrapper: {
+    marginTop: 12,
+    gap: 12,
+    alignItems: 'center',
   },
   radioBox: {
     width: 166,
@@ -955,7 +1234,7 @@ const styles = StyleSheet.create({
   staticEllipse: {
     position: 'absolute',
     // Position roughly under the carousel; adjust with top/left as needed per design
-    top: 279.66,
+    top: 120,
     left: 91.12,
     width: 218.88140461216418,
     height: 78.87618108615521,
@@ -976,8 +1255,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 40,
     left: 137,
-    width: "auto",
-    height: "auto",
+    width: 'auto',
+    height: 'auto',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 2,
@@ -986,7 +1265,7 @@ const styles = StyleSheet.create({
   activeTitleText: {
     fontFamily: 'Urbanist',
     fontWeight: '500',
-    height: "fit-content",
+    height: 'fit-content',
     fontSize: 28,
     lineHeight: 28,
     letterSpacing: 0,
@@ -997,7 +1276,7 @@ const styles = StyleSheet.create({
 
 export default YukOlusturScreen;
 
-const CarouselRN = ({ onActiveIndexChange }) => {
+const CarouselRN = ({onActiveIndexChange}) => {
   const scrollX = React.useRef(new Animated.Value(0)).current;
   // Blur is now applied within VehicleSlideItem only on the image area
   const [activeIndex, setActiveIndex] = React.useState(0);
@@ -1017,61 +1296,68 @@ const CarouselRN = ({ onActiveIndexChange }) => {
     return () => scrollX.removeListener(id);
   }, [scrollX]);
 
-  const renderItem = React.useCallback(({item, index}) => {
-    const inputRange = [
-      (index - 1) * PAGE_WIDTH,
-      index * PAGE_WIDTH,
-      (index + 1) * PAGE_WIDTH,
-    ];
+  const renderItem = React.useCallback(
+    ({item, index}) => {
+      const inputRange = [
+        (index - 1) * PAGE_WIDTH,
+        index * PAGE_WIDTH,
+        (index + 1) * PAGE_WIDTH,
+      ];
 
-    const scale = scrollX.interpolate({
-      inputRange,
-      outputRange: [0.85, 0.98, 0.85],
-      extrapolate: 'clamp',
-    });
+      const scale = scrollX.interpolate({
+        inputRange,
+        outputRange: [0.85, 0.98, 0.85],
+        extrapolate: 'clamp',
+      });
 
-    const translateX = scrollX.interpolate({
-      inputRange,
-      outputRange: [30, 0, -30],
-      extrapolate: 'clamp',
-    });
+      const translateX = scrollX.interpolate({
+        inputRange,
+        outputRange: [30, 0, -30],
+        extrapolate: 'clamp',
+      });
 
-    const maskOpacity = scrollX.interpolate({
-      inputRange,
-      outputRange: [1, 0, 1],
-      extrapolate: 'clamp',
-    });
+      const maskOpacity = scrollX.interpolate({
+        inputRange,
+        outputRange: [1, 0, 1],
+        extrapolate: 'clamp',
+      });
 
-  const showBlur = !isScrolling && index !== activeIndex && Math.abs(index - activeIndex) <= 1;
-  const isActive = index === activeIndex;
+      const showBlur =
+        !isScrolling &&
+        index !== activeIndex &&
+        Math.abs(index - activeIndex) <= 1;
+      const isActive = index === activeIndex;
 
-    return (
-      <View style={{width: PAGE_WIDTH, height: 300}}>
-        <Animated.View
-          style={{
-            flex: 1,
-            borderRadius: 12,
-            overflow: 'hidden',
-            // Hint rasterization to reduce per-frame work
-            renderToHardwareTextureAndroid: true,
-            shouldRasterizeIOS: true,
-            needsOffscreenAlphaCompositing: true,
-            transform: [{translateX}, {scale}],
-          }}>
-          <VehicleSlideItem item={item} blurOpacity={maskOpacity} showBlur={showBlur} isActive={isActive} />
-        </Animated.View>
-      </View>
-    );
-  }, [activeIndex]);
+      return (
+        <View style={{width: PAGE_WIDTH, height: 300}}>
+          <Animated.View
+            style={{
+              flex: 1,
+              borderRadius: 12,
+              overflow: 'hidden',
+              // Hint rasterization to reduce per-frame work
+              renderToHardwareTextureAndroid: true,
+              shouldRasterizeIOS: true,
+              needsOffscreenAlphaCompositing: true,
+              transform: [{translateX}, {scale}],
+            }}>
+            <VehicleSlideItem
+              item={item}
+              blurOpacity={maskOpacity}
+              showBlur={showBlur}
+              isActive={isActive}
+            />
+          </Animated.View>
+        </View>
+      );
+    },
+    [activeIndex],
+  );
 
   return (
     <View style={styles.contentArea}>
       {/* Active vehicle name overlay (white text, no background) */}
-      <View pointerEvents="none" style={styles.activeTitleOverlay}>
-        <Text style={styles.activeTitleText}>
-          {vehicleItems[activeIndex]?.name ?? ''}
-        </Text>
-      </View>
+
       <Animated.FlatList
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -1079,13 +1365,18 @@ const CarouselRN = ({ onActiveIndexChange }) => {
         keyExtractor={(item, idx) => String(item.id ?? idx)}
         renderItem={renderItem}
         snapToInterval={PAGE_WIDTH}
-        decelerationRate="fast"
+        decelerationRate="normal"
+        disableIntervalMomentum={true}
         bounces={false}
         windowSize={5}
         initialNumToRender={3}
         maxToRenderPerBatch={3}
         updateCellBatchingPeriod={16}
-        getItemLayout={(_, i) => ({length: PAGE_WIDTH, offset: PAGE_WIDTH * i, index: i})}
+        getItemLayout={(_, i) => ({
+          length: PAGE_WIDTH,
+          offset: PAGE_WIDTH * i,
+          index: i,
+        })}
         contentContainerStyle={{
           paddingHorizontal: (window.width - PAGE_WIDTH) / 2,
         }}

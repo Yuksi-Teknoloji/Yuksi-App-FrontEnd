@@ -10,9 +10,10 @@ import StarEmpty from '@/assets/icons/star-empty-orange.svg';
 
 // Background image path
 import BgImage from '@/assets/images/background-olustur-screen.jpeg';
-import ProfilePhoto from '@/assets/images/profile-photo-3a68ba.png';
+import ProfilePhoto from '@/assets/images/profilephoto.png';
 // Reuse same input components and icons as first screen
 import LabeledInput from './components/LabeledInput';
+import LocationPickerInput from './components/LocationPickerInput';
 import NotesTextArea from './components/NotesTextArea';
 import ProfileIcon from '@/assets/icons/profile-icon.svg';
 import LocationFromIcon from '@/assets/icons/location-from.svg';
@@ -31,6 +32,7 @@ const YukOlusturResultScreen = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const startIndex = typeof route?.params?.startIndex === 'number' ? route.params.startIndex : 0;
+  const autoProgress = route?.params?.autoProgress === true;
 
   const [index, setIndex] = React.useState(startIndex);
   const [completed, setCompleted] = React.useState(false);
@@ -43,6 +45,9 @@ const YukOlusturResultScreen = () => {
   const [forumLabel2, setForumLabel2] = React.useState('');
   const [forumNotes, setForumNotes] = React.useState('');
   const [forumTotal, setForumTotal] = React.useState('');
+  // Location data with coordinates
+  const [forumPickupLocation, setForumPickupLocation] = React.useState(null);
+  const [forumDropoffLocation, setForumDropoffLocation] = React.useState(null);
   // Button micro-animations
   const confirmAnim = React.useRef(new Animated.Value(1)).current;
   const retryAnim = React.useRef(new Animated.Value(1)).current;
@@ -92,6 +97,29 @@ const YukOlusturResultScreen = () => {
   const opacity = React.useRef(new Animated.Value(0)).current;
   const scale = React.useRef(new Animated.Value(0.9)).current;
   const intervalRef = React.useRef(null);
+
+  // Auto-progress effect: 3 seconds loading -> 2 seconds completed
+  React.useEffect(() => {
+    if (!autoProgress) return;
+
+    const timer1 = setTimeout(() => {
+      setCompleted(true);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    }, 3000); // Show loading for 3 seconds
+
+    const timer2 = setTimeout(() => {
+      setShowAvatar(true);
+      setShowEmptyForum(false);
+    }, 5000); // After 5 seconds total, show avatar screen
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
+  }, [autoProgress]);
 
   React.useEffect(() => {
     let isMounted = true;
@@ -146,7 +174,10 @@ const YukOlusturResultScreen = () => {
             <TouchableOpacity
               activeOpacity={0.9}
               style={styles.capsuleBtn}
+              disabled={autoProgress}
               onPress={() => {
+                if (autoProgress) return; // Prevent manual interaction in auto mode
+
                 if (pendingApproval) {
                   // In pending view, allow toggling to avatar screen on press
                   setShowAvatar(true);
@@ -177,7 +208,12 @@ const YukOlusturResultScreen = () => {
             </TouchableOpacity>
           </View>
         ) : (
-          <View style={[styles.completedContainer, showEmptyForum && styles.completedContainerNoPad]}>
+          <ScrollView
+            style={styles.completedScroll}
+            contentContainerStyle={[styles.completedContainer, showEmptyForum && styles.completedContainerNoPad]}
+            showsVerticalScrollIndicator={false}
+            bounces={true}
+          >
             <View style={styles.avatarWrap}>
               <Image source={ProfilePhoto} style={styles.avatarImage} resizeMode="cover" />
               {CurrentIcon && (
@@ -238,20 +274,10 @@ const YukOlusturResultScreen = () => {
 
             {/* Forum container */
             }
-            <View style={[
-              styles.forumContainer,
-              showEmptyForum ? styles.forumContainerFull : styles.forumContainerLimited,
-            ]}>
+            <View style={styles.forumContainer}>
               {showEmptyForum ? (
                 // After clicking the pending capsule: show simple read-only text lines and two buttons
-                <ScrollView
-                  style={styles.forumScroll}
-                  contentContainerStyle={styles.forumTextWrap}
-                  showsVerticalScrollIndicator={true}
-                  nestedScrollEnabled
-                  bounces
-                  alwaysBounceVertical
-                >
+                <View style={styles.forumTextWrap}>
                   {/* Action buttons row at top */}
                   <View style={styles.forumButtonsRow}>
                     <TouchableOpacity
@@ -280,18 +306,9 @@ const YukOlusturResultScreen = () => {
                     note={forumNotes}
                     total={forumTotal}
                   />
-                </ScrollView>
+                </View>
               ) : (
-                <ScrollView
-                  style={styles.forumScroll}
-                  contentContainerStyle={styles.forumInner}
-                  showsVerticalScrollIndicator={true}
-                  keyboardShouldPersistTaps="handled"
-                  keyboardDismissMode="on-drag"
-                  nestedScrollEnabled
-                  bounces
-                  alwaysBounceVertical
-                >
+                <View style={styles.forumInner}>
                   {/* One text field without label */}
                   <LabeledInput
                     label=""
@@ -303,19 +320,25 @@ const YukOlusturResultScreen = () => {
                   />
 
                   {/* Two text fields with label and icon */}
-                  <LabeledInput
+                  <LocationPickerInput
                     label="Alış Noktası:"
                     placeholder="Alış Noktası"
                     icon={LocationFromIcon}
                     value={forumLabel1}
-                    onChangeText={setForumLabel1}
+                    onLocationSelect={(location) => {
+                      setForumPickupLocation(location);
+                      setForumLabel1(location.address);
+                    }}
                   />
-                  <LabeledInput
+                  <LocationPickerInput
                     label="Varış Noktası:"
                     placeholder="Varış Noktası"
                     icon={LocationFromIcon}
                     value={forumLabel2}
-                    onChangeText={setForumLabel2}
+                    onLocationSelect={(location) => {
+                      setForumDropoffLocation(location);
+                      setForumLabel2(location.address);
+                    }}
                   />
 
                   {/* One text area */}
@@ -363,10 +386,10 @@ const YukOlusturResultScreen = () => {
                       <Text style={styles.ctaBtnText}>Yeniden Yüksile</Text>
                     </Animated.View>
                   </TouchableOpacity>
-                </ScrollView>
+                </View>
               )}
             </View>
-          </View>
+          </ScrollView>
         )}
       </ImageBackground>
     </View>
@@ -432,9 +455,8 @@ const styles = StyleSheet.create({
   capsuleTextCompleted: { color: '#0ECC00' },
   completedScroll: { flex: 1 },
   completedContainer: {
-    flex: 1,
     alignItems: 'center',
-    paddingTop: 99, // approximate previous absolute top
+    paddingTop: 99,
     paddingBottom: 32,
   },
   completedContainerNoPad: {
@@ -590,27 +612,16 @@ const styles = StyleSheet.create({
 
   // Container for forum area under the rating section
   forumContainer: {
-    marginTop: 24, // keep some space above
-    width: 413,
+    marginTop: 24,
+    marginBottom: -100, // Extend beyond viewport to cover background
+    width: '100%',
     opacity: 1,
     backgroundColor: '#E4EEF0',
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     alignSelf: 'center',
-    overflow: 'hidden',
     transform: [{ rotate: '0deg' }],
-  },
-  forumContainerLimited: {
-    maxHeight: 431, // original behavior: limit height and scroll inside
-  },
-  forumContainerFull: {
-    flex: 1, // pending path: fill remaining screen height
-    width: '100%',
-    alignSelf: 'stretch',
-    minHeight: 0,
-  },
-  forumScroll: {
-    width: '100%',
+    paddingBottom: 100,
   },
   forumInner: {
     width: '100%',

@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StatusBar,
-    // Image,
+  // Image,
 } from 'react-native';
 import LocationIcon from '../../assets/icons/location-from.svg';
 import GreenLocationIcon from '../../assets/icons/location-icon.svg';
@@ -37,7 +37,7 @@ const transfersData = [
     from: 'KESTEL Ahmet Vefikpaşa OSB Mahallesi, Bursa Caddesi No:73, Kestel/Bursa.',
     to: 'Gözede, 16450 Kestel/Bursa',
     dateTime: '12.00',
-  totalAmount: '580 TL',
+    totalAmount: '580 TL',
   },
   {
     id: 2,
@@ -51,7 +51,7 @@ const transfersData = [
     to: 'Gözede, 16450 Kestel/Bursa',
     dateTime: '12.00/5 eylül/2025',
     totalAmount: '2850 TL',
-  // courier image replaced by profile SVG icon
+    // courier image replaced by profile SVG icon
   },
   {
     id: 3,
@@ -64,7 +64,7 @@ const transfersData = [
     from: 'KESTEL Ahmet Vefikpaşa OSB Mahallesi, Bursa Caddesi No:73, Kestel/Bursa.',
     to: 'Gözede, 16450 Kestel/Bursa',
     dateTime: '12.00/5 eylül/2025',
-  totalAmount: '1850 TL',
+    totalAmount: '1850 TL',
   },
 ];
 
@@ -98,30 +98,34 @@ const PostsScreen = () => {
 
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>İşlemlerim</Text>
         {/* Filter Tabs */}
         <View style={styles.filterContainer}>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.filterScrollContent}>
-            {filterOptions.map(option => (
-              <TouchableOpacity
-                key={option.key}
-                style={[
-                  styles.filterTab,
-                  selectedFilter === option.key && styles.filterTabActive,
-                ]}
-                onPress={() => setSelectedFilter(option.key)}>
-                <Text
+            <>
+              <Text style={styles.headerTitle}>İşlemlerim</Text>
+
+              {filterOptions.map(option => (
+                <TouchableOpacity
+                  key={option.key}
                   style={[
-                    styles.filterTabText,
-                    selectedFilter === option.key && styles.filterTabTextActive,
-                  ]}>
-                  {option.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                    styles.filterTab,
+                    selectedFilter === option.key && styles.filterTabActive,
+                  ]}
+                  onPress={() => setSelectedFilter(option.key)}>
+                  <Text
+                    style={[
+                      styles.filterTabText,
+                      selectedFilter === option.key &&
+                        styles.filterTabTextActive,
+                    ]}>
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </>
           </ScrollView>
         </View>
       </View>
@@ -353,6 +357,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FF5B04',
     fontFamily: 'Urbanist',
+    marginRight: 10,
   },
   notificationIcon: {
     justifyContent: 'center',
@@ -379,7 +384,6 @@ const styles = StyleSheet.create({
   },
   filterScrollContent: {
     paddingLeft: 20,
-    paddingRight: 100, // sondaki buton tam gözüksün
   },
   filterTab: {
     paddingHorizontal: 18,

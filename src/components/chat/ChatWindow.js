@@ -1,5 +1,15 @@
-import React, { useRef } from 'react';
-import { View, Text, StyleSheet, ImageBackground, TouchableOpacity, TextInput, ScrollView, Pressable } from 'react-native';
+import React, {useRef, useEffect} from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ImageBackground,
+  TouchableOpacity,
+  TextInput,
+  ScrollView,
+  Pressable,
+  Animated,
+} from 'react-native';
 import useChatStore from '@/store/chatStore';
 
 import BgImage from '@/assets/images/background-motor-grey.jpg';
@@ -9,6 +19,76 @@ import CameraIcon from '@/assets/icons/camera.svg';
 import MicIcon from '@/assets/icons/mic.svg';
 import SendIcon from '@/assets/icons/send.svg';
 
+// Typing indicator component
+const TypingIndicator = ({botBubbleColor}) => {
+  const dot1 = useRef(new Animated.Value(0)).current;
+  const dot2 = useRef(new Animated.Value(0)).current;
+  const dot3 = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const animateDot = (dot, delay) => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(dot, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+          Animated.timing(dot, {
+            toValue: 0,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+        ]),
+      ).start();
+    };
+
+    animateDot(dot1, 0);
+    animateDot(dot2, 200);
+    animateDot(dot3, 400);
+  }, [dot1, dot2, dot3]);
+
+  return (
+    <View style={[styles.typingBubble, {backgroundColor: botBubbleColor}]}>
+      <View style={styles.typingDots}>
+        <Animated.View
+          style={[
+            styles.dot,
+            {
+              opacity: dot1.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.3, 1],
+              }),
+            },
+          ]}
+        />
+        <Animated.View
+          style={[
+            styles.dot,
+            {
+              opacity: dot2.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.3, 1],
+              }),
+            },
+          ]}
+        />
+        <Animated.View
+          style={[
+            styles.dot,
+            {
+              opacity: dot3.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.3, 1],
+              }),
+            },
+          ]}
+        />
+      </View>
+    </View>
+  );
+};
 
 const ChatWindow = ({
   title = 'Chat',
@@ -18,13 +98,14 @@ const ChatWindow = ({
   botBubbleColor = '#FF5B04',
   onBack,
 }) => {
-  const inputText = useChatStore((s) => s.inputText);
-  const setInputText = useChatStore((s) => s.setInputText);
-  const messages = useChatStore((s) => s.messages);
-  const sendMessage = useChatStore((s) => s.sendMessage);
-  const sendSuggestion = useChatStore((s) => s.sendSuggestion);
-  const showSuggestions = useChatStore((s) => s.showSuggestions);
-  const suggestions = useChatStore((s) => s.suggestions);
+  const inputText = useChatStore(s => s.inputText);
+  const setInputText = useChatStore(s => s.setInputText);
+  const messages = useChatStore(s => s.messages);
+  const sendMessage = useChatStore(s => s.sendMessage);
+  const sendSuggestion = useChatStore(s => s.sendSuggestion);
+  const showSuggestions = useChatStore(s => s.showSuggestions);
+  const suggestions = useChatStore(s => s.suggestions);
+  const isLoading = useChatStore(s => s.isLoading);
   const scrollRef = useRef(null);
 
   const handleSend = () => {
@@ -100,7 +181,7 @@ const ChatWindow = ({
               const isUser = m.side === 'user';
               const bubbleStyle = [
                 isUser ? styles.messageBubbleUser : styles.messageBubbleBot,
-                { backgroundColor: isUser ? userBubbleColor : botBubbleColor },
+                {backgroundColor: isUser ? userBubbleColor : botBubbleColor},
               ];
               return (
                 <View key={m.id} style={bubbleStyle}>
@@ -108,6 +189,7 @@ const ChatWindow = ({
                 </View>
               );
             })}
+            {isLoading && <TypingIndicator botBubbleColor={botBubbleColor} />}
           </ScrollView>
         </View>
 
@@ -255,8 +337,32 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     paddingLeft: 24,
   },
-  messageText: { color: '#FFFFFF', fontFamily: 'Urbanist', fontSize: 14, lineHeight: 18 },
-  composer: { marginTop: 12, flexDirection: 'row', alignItems: 'center' },
+  messageText: {color: '#FFFFFF', fontFamily: 'Urbanist', fontSize: 14, lineHeight: 18},
+  typingBubble: {
+    alignSelf: 'flex-start',
+    minWidth: 80,
+    height: 56,
+    opacity: 1,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    borderBottomRightRadius: 32,
+    borderBottomLeftRadius: 4,
+    paddingHorizontal: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  typingDots: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FFFFFF',
+  },
+  composer: {marginTop: 12, flexDirection: 'row', alignItems: 'center'},
   inputWrap: {
     width: 294,
     height: 50,
