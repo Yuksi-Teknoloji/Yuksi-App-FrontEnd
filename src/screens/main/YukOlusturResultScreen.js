@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ImageBackground, Image, StyleSheet, TouchableOpacity, Text, Animated, Easing, Alert, ScrollView } from 'react-native';
+import { View, ImageBackground, Image, StyleSheet, TouchableOpacity, Text, Animated, Easing, Alert, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { vehicleItems } from '@/utils/vehicleItems';
 import CheckIcon from '@/assets/icons/checkmark.svg';
@@ -208,12 +208,16 @@ const YukOlusturResultScreen = () => {
             </TouchableOpacity>
           </View>
         ) : (
-          <ScrollView
-            style={styles.completedScroll}
-            contentContainerStyle={[styles.completedContainer, showEmptyForum && styles.completedContainerNoPad]}
-            showsVerticalScrollIndicator={false}
-            bounces={true}
-          >
+          <KeyboardAvoidingView
+            style={styles.keyboardAvoid}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={0}>
+            <ScrollView
+              style={styles.completedScroll}
+              contentContainerStyle={[styles.completedContainer, showEmptyForum && styles.completedContainerNoPad]}
+              showsVerticalScrollIndicator={false}
+              bounces={true}
+              keyboardShouldPersistTaps="handled">
             <View style={styles.avatarWrap}>
               <Image source={ProfilePhoto} style={styles.avatarImage} resizeMode="cover" />
               {CurrentIcon && (
@@ -387,9 +391,10 @@ const YukOlusturResultScreen = () => {
                     </Animated.View>
                   </TouchableOpacity>
                 </View>
-              )}
-            </View>
-          </ScrollView>
+                )}
+              </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
         )}
       </ImageBackground>
     </View>
@@ -399,6 +404,9 @@ const YukOlusturResultScreen = () => {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   bg: { flex: 1 },
+  keyboardAvoid: {
+    flex: 1,
+  },
   contentWrap: {
     flex: 1,
     alignItems: 'center',

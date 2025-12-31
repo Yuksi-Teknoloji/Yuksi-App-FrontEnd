@@ -9,6 +9,9 @@ import {
   Animated,
   StatusBar,
   SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from 'react-native';
 import {useAuth} from '../../context/AuthContext';
 import { useAuthStore } from '../../store/authStore';
@@ -77,27 +80,34 @@ const LoginScreen = ({navigation}) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#FF5B04" />
-
-      {/* MainContainer */}
-      <View style={styles.mainContainer}>
-        {/* Orange Section */}
-        <View style={styles.orangeSection}>
-          {/* Yüksi Logo */}
-          <YuksiLogo width={124} height={124} style={styles.logo} />
-        </View>
-
-        {/* White Container */}
-        <View style={styles.whiteContainer}>
-          {/* Header Text Section */}
-          <View style={styles.headerSection}>
-            <View style={styles.headerTextContainer}>
-              <Text style={styles.merhabaText}>Merhaba,</Text>
-              <Text style={styles.subtitleText}>Yüksi'ye hoş geldin.</Text>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoid}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled">
+          {/* MainContainer */}
+          <View style={styles.mainContainer}>
+            {/* Orange Section */}
+            <View style={styles.orangeSection}>
+              {/* Yüksi Logo */}
+              <YuksiLogo width={124} height={124} style={styles.logo} />
             </View>
-          </View>
 
-          {/* Form Section */}
-          <View style={styles.formSection}>
+            {/* White Container */}
+            <View style={styles.whiteContainer}>
+              {/* Header Text Section */}
+              <View style={styles.headerSection}>
+                <View style={styles.headerTextContainer}>
+                  <Text style={styles.merhabaText}>Merhaba,</Text>
+                  <Text style={styles.subtitleText}>Yüksi'ye hoş geldin.</Text>
+                </View>
+              </View>
+
+              {/* Form Section */}
+              <View style={styles.formSection}>
             {/* E-mail Input Group */}
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>E-mail</Text>
@@ -157,29 +167,31 @@ const LoginScreen = ({navigation}) => {
             </View>
           </View>
 
-          {/* Campaign Section */}
-          <View style={styles.campaignSection}>
-            <Text style={styles.campaignText}>
-              Moto kurye kampanyasını{'\n'}kaçırma!
-            </Text>
-          </View>
-        </View>
+              {/* Campaign Section */}
+              <View style={styles.campaignSection}>
+                <Text style={styles.campaignText}>
+                  Moto kurye kampanyasını{'\n'}kaçırma!
+                </Text>
+              </View>
+            </View>
 
-        {/* Animated Motor Image */}
-        <Animated.View
-          style={[
-            styles.motorImageContainer,
-            {
-              transform: [{translateX: motorAnimation}],
-            },
-          ]}>
-          <Image
-            source={require('../../assets/images/motor-side.png')}
-            style={styles.motorImage}
-            resizeMode="contain"
-          />
-        </Animated.View>
-      </View>
+            {/* Animated Motor Image */}
+            <Animated.View
+              style={[
+                styles.motorImageContainer,
+                {
+                  transform: [{translateX: motorAnimation}],
+                },
+              ]}>
+              <Image
+                source={require('../../assets/images/motor-side.png')}
+                style={styles.motorImage}
+                resizeMode="contain"
+              />
+            </Animated.View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -188,6 +200,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FF5B04',
+  },
+  keyboardAvoid: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   mainContainer: {
     flex: 1,

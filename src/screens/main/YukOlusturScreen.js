@@ -13,6 +13,7 @@ import {
   Platform,
   Image,
   Switch,
+  KeyboardAvoidingView,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {window} from '@/constants/sizes';
@@ -316,18 +317,23 @@ const YukOlusturScreen = ({navigation}) => {
       <SafeAreaView
         style={[styles.safeArea, {paddingTop: Platform.OS === 'ios' ? 0 : 40}]}
         pointerEvents={openDropdown ? 'none' : 'auto'}>
-        {/* Fixed header - vehicle name, stays at top */}
-        <View pointerEvents="none" style={styles.fixedHeader}>
-          <Text style={styles.fixedHeaderText}>
-            {vehicleItems[activeVehicleIndex]?.name ?? ''}
-          </Text>
-        </View>
+        <KeyboardAvoidingView
+          style={styles.keyboardAvoid}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 40}>
+          {/* Fixed header - vehicle name, stays at top */}
+          <View pointerEvents="none" style={styles.fixedHeader}>
+            <Text style={styles.fixedHeaderText}>
+              {vehicleItems[activeVehicleIndex]?.name ?? ''}
+            </Text>
+          </View>
 
-        {/* Scrollable content - carousel, pill, and forms all scroll */}
-        <ScrollView
-          style={styles.scrollArea}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}>
+          {/* Scrollable content - carousel, pill, and forms all scroll */}
+          <ScrollView
+            style={styles.scrollArea}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled">
           {/* Fixed ellipse base under vehicles */}
           <View pointerEvents="none" style={styles.staticEllipse} />
 
@@ -577,23 +583,24 @@ const YukOlusturScreen = ({navigation}) => {
             onChangeText={setTotalAmount}
           />
 
-          {/* Submit button at the bottom */}
-          <SubmitButton
-            title="Gönder"
-            onPress={async () => {
-              const ok = await handleSubmit();
-              if (ok) {
-                // Navigate with autoProgress flag for 5-second auto loading
-                navigation.navigate('YukOlusturResult', {
-                  startIndex: activeVehicleIndex,
-                  autoProgress: true,
-                });
-              }
-            }}
-            loading={submitting}
-            disabled={false}
-          />
-        </ScrollView>
+            {/* Submit button at the bottom */}
+            <SubmitButton
+              title="Gönder"
+              onPress={async () => {
+                const ok = await handleSubmit();
+                if (ok) {
+                  // Navigate with autoProgress flag for 5-second auto loading
+                  navigation.navigate('YukOlusturResult', {
+                    startIndex: activeVehicleIndex,
+                    autoProgress: true,
+                  });
+                }
+              }}
+              loading={submitting}
+              disabled={false}
+            />
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
       {/* Modal overlay for dropdowns */}
       {openDropdown && (
@@ -711,6 +718,9 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     zIndex: 1,
+  },
+  keyboardAvoid: {
+    flex: 1,
   },
   scrollArea: {
     flex: 1,

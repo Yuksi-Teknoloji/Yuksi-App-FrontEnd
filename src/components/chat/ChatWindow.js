@@ -9,6 +9,8 @@ import {
   ScrollView,
   Pressable,
   Animated,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import useChatStore from '@/store/chatStore';
 
@@ -118,48 +120,52 @@ const ChatWindow = ({
 
   return (
     <ImageBackground source={BgImage} style={styles.bg} resizeMode="cover">
-      <View style={styles.overlay}>
-        {/* Top row: back arrow + capsule */}
-        <View style={styles.topRow}>
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel="Geri"
-            activeOpacity={0.7}
-            style={styles.backBtn}
-            onPress={onBack}
-          >
-            <View style={styles.arrow} />
-          </TouchableOpacity>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoid}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}>
+        <View style={styles.overlay}>
+          {/* Top row: back arrow + capsule */}
+          <View style={styles.topRow}>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Geri"
+              activeOpacity={0.7}
+              style={styles.backBtn}
+              onPress={onBack}
+            >
+              <View style={styles.arrow} />
+            </TouchableOpacity>
 
-          {/* Top capsule */}
-          <View style={styles.topCapsule}>
-            <View style={styles.topLeft}>
-              {TopIcon ? <TopIcon {...topIconProps} /> : null}
-              <View style={{ marginLeft: 8 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
-                  <Text style={styles.kanguruText}>{title}</Text>
-                  <Text style={styles.chatbotText}> chatbot</Text>
+            {/* Top capsule */}
+            <View style={styles.topCapsule}>
+              <View style={styles.topLeft}>
+                {TopIcon ? <TopIcon {...topIconProps} /> : null}
+                <View style={{ marginLeft: 8 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                    <Text style={styles.kanguruText}>{title}</Text>
+                    <Text style={styles.chatbotText}> chatbot</Text>
+                  </View>
+                  <Text style={styles.statusText}>Aktif</Text>
                 </View>
-                <Text style={styles.statusText}>Aktif</Text>
+              </View>
+              <View style={styles.topRight}>
+                <TouchableOpacity activeOpacity={0.7} style={styles.rightIconBtn}>
+                  <MoreVertIcon width={20} height={20} />
+                </TouchableOpacity>
               </View>
             </View>
-            <View style={styles.topRight}>
-              <TouchableOpacity activeOpacity={0.7} style={styles.rightIconBtn}>
-                <MoreVertIcon width={20} height={20} />
-              </TouchableOpacity>
-            </View>
           </View>
-        </View>
 
-        {/* Chat area */}
-        <View style={styles.chatArea}>
-          <ScrollView
-            ref={scrollRef}
-            contentContainerStyle={styles.messageList}
-            keyboardShouldPersistTaps="handled"
-            onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
-            showsVerticalScrollIndicator={false}
-          >
+          {/* Chat area */}
+          <View style={styles.chatArea}>
+            <ScrollView
+              ref={scrollRef}
+              contentContainerStyle={styles.messageList}
+              keyboardShouldPersistTaps="handled"
+              onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
+              showsVerticalScrollIndicator={false}
+            >
             {showSuggestions && (
               <View style={styles.suggestionColumn}>
                 {suggestions.map(s => (
@@ -189,12 +195,12 @@ const ChatWindow = ({
                 </View>
               );
             })}
-            {isLoading && <TypingIndicator botBubbleColor={botBubbleColor} />}
-          </ScrollView>
-        </View>
+              {isLoading && <TypingIndicator botBubbleColor={botBubbleColor} />}
+            </ScrollView>
+          </View>
 
-        {/* Bottom composer */}
-        <View style={styles.composer}>
+          {/* Bottom composer */}
+          <View style={styles.composer}>
           <View style={styles.inputWrap}>
             <TextInput
               style={styles.input}
@@ -225,17 +231,21 @@ const ChatWindow = ({
               </TouchableOpacity>
             )}
           </View>
-          <TouchableOpacity activeOpacity={0.8} style={styles.micBtn}>
-            <MicIcon width={18} height={18} />
-          </TouchableOpacity>
+            <TouchableOpacity activeOpacity={0.8} style={styles.micBtn}>
+              <MicIcon width={18} height={18} />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
   bg: { flex: 1 },
+  keyboardAvoid: {
+    flex: 1,
+  },
   overlay: {
     flex: 1,
     backgroundColor: 'transparent',

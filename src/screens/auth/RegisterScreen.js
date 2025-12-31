@@ -7,6 +7,9 @@ import {
   StyleSheet,
   StatusBar,
   SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from 'react-native';
 import YuksiLogo from '../../assets/images/yuksi-vektor-logo.svg';
 import {Checkbox} from 'expo-checkbox';
@@ -40,27 +43,34 @@ const RegisterScreen = ({navigation}) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#FF5B04" />
-
-      {/* MainContainer */}
-      <View style={styles.mainContainer}>
-        {/* Orange Section */}
-        <View style={styles.orangeSection}>
-          {/* Yüksi Logo */}
-          <YuksiLogo width={124} height={124} style={styles.logo} />
-        </View>
-
-        {/* White Container */}
-        <View style={styles.whiteContainer}>
-          {/* Header Text Section */}
-          <View style={styles.headerSection}>
-            <View style={styles.headerTextContainer}>
-              <Text style={styles.merhabaText}>Merhaba,</Text>
-              <Text style={styles.subtitleText}>Yüksi'ye hoş geldin.</Text>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoid}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled">
+          {/* MainContainer */}
+          <View style={styles.mainContainer}>
+            {/* Orange Section */}
+            <View style={styles.orangeSection}>
+              {/* Yüksi Logo */}
+              <YuksiLogo width={124} height={124} style={styles.logo} />
             </View>
-          </View>
 
-          {/* Form Section */}
-          <View style={styles.formSection}>
+            {/* White Container */}
+            <View style={styles.whiteContainer}>
+              {/* Header Text Section */}
+              <View style={styles.headerSection}>
+                <View style={styles.headerTextContainer}>
+                  <Text style={styles.merhabaText}>Merhaba,</Text>
+                  <Text style={styles.subtitleText}>Yüksi'ye hoş geldin.</Text>
+                </View>
+              </View>
+
+              {/* Form Section */}
+              <View style={styles.formSection}>
             {/* Name/Surname Input Group */}
             <View style={styles.nameInputContainer}>
               <View style={styles.flex1}>
@@ -172,17 +182,19 @@ const RegisterScreen = ({navigation}) => {
               <Text style={styles.registerButtonText}>{registering ? 'Kaydediliyor…' : 'Kayıt Ol'}</Text>
             </TouchableOpacity>
 
-            {/* Have an account */}
-            <View style={styles.registerContainer}>
-              <Text
-                style={styles.registerText}
-                onPress={() => navigation.navigate('Login')}>
-                Mevcut bir hesabım var
-              </Text>
+                {/* Have an account */}
+                <View style={styles.registerContainer}>
+                  <Text
+                    style={styles.registerText}
+                    onPress={() => navigation.navigate('Login')}>
+                    Mevcut bir hesabım var
+                  </Text>
+                </View>
+              </View>
             </View>
           </View>
-        </View>
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -191,6 +203,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FF5B04',
+  },
+  keyboardAvoid: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   mainContainer: {
     flex: 1,
