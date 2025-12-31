@@ -1,4 +1,5 @@
-import {apiClient} from './client';
+import { apiClient } from './client';
+import { ENDPOINTS } from '../constants/api';
 
 /**
  * Send message to chatbot
@@ -6,7 +7,7 @@ import {apiClient} from './client';
  * @param {string} [sessionId] - Optional session ID
  * @returns {Promise<{message: string, sessionId: string}>}
  */
-export const sendChatMessage = async (message, sessionId = null) => {
+const sendChatMessage = async (message, sessionId = null) => {
   const payload = {
     message,
   };
@@ -16,5 +17,9 @@ export const sendChatMessage = async (message, sessionId = null) => {
     payload.sessionId = sessionId;
   }
 
-  return await apiClient.post('/api/cargo/chat', payload);
+  return await apiClient.post(ENDPOINTS.cargoChat, payload);
+};
+
+export const chatApi = {
+  sendMessage: sendChatMessage,
 };

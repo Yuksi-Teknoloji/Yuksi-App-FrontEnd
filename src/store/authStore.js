@@ -23,12 +23,18 @@ export const useAuthStore = create((set, get) => ({
     set({ isLoading: true });
     try {
       const userToken = await getItem('userToken');
+      console.log('🔄 Restoring token from storage:', userToken ? `${userToken.substring(0, 20)}...` : 'null');
       setTimeout(() => {
-        set({ userToken, isLoading: false });
+        set({
+          userToken,
+          isSignedIn: !!userToken, // Set isSignedIn based on token presence
+          isLoading: false
+        });
+        console.log('✅ Token restored, isSignedIn:', !!userToken);
       }, 3000);
     } catch (e) {
-      console.log('Token loading error:', e);
-      set({ isLoading: false });
+      console.error('❌ Token loading error:', e);
+      set({ isLoading: false, isSignedIn: false, userToken: null });
     }
   },
 
@@ -78,16 +84,19 @@ export const useAuthStore = create((set, get) => ({
       // if (!res?.token) {
       //   throw new Error('Token bulunamadı. Lütfen tekrar deneyin.');
       // }
-      console.log('Login successful, response:', res);
+      console.log('✅ Login successful, response:', res);
       const token = res.data.accessToken;
+      console.log('💾 Saving token to storage:', token ? `${token.substring(0, 20)}...` : 'null');
       await setItem('userToken', token);
-      set({ 
-        signInResponse: res, 
-        signingIn: false, 
-        isSignedIn: true, 
+      console.log('✅ Token saved to storage successfully');
+      set({
+        signInResponse: res,
+        signingIn: false,
+        isSignedIn: true,
         userToken: token,
-        signInError: null 
+        signInError: null
       });
+      console.log('✅ Auth state updated: isSignedIn=true');
       return { ok: true, data: res };
     } catch (err) {
       // Prioritize response.message from API

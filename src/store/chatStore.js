@@ -1,6 +1,6 @@
 import {create} from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {sendChatMessage} from '../api/chatApi';
+import {chatApi} from '../api/chatApi';
 
 const CHAT_SESSION_KEY = '@chat_session_id';
 
@@ -51,7 +51,7 @@ const useChatStore = create(set => ({
       const sessionId = await getSessionId();
 
       // Call API
-      const response = await sendChatMessage(trimmed, sessionId);
+      const response = await chatApi.sendMessage(trimmed, sessionId);
 
       // Save new sessionId if provided
       if (response.data?.sessionId) {
@@ -102,7 +102,7 @@ const useChatStore = create(set => ({
       const sessionId = await getSessionId();
 
       // Call API
-      const response = await sendChatMessage(text, sessionId);
+      const response = await chatApi.sendMessage(text, sessionId);
 
       // Save new sessionId if provided
       if (response.data?.sessionId) {

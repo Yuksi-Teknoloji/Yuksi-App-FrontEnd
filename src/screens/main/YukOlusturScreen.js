@@ -14,6 +14,8 @@ import {
   Image,
   Switch,
   KeyboardAvoidingView,
+  FlatList,
+  ActivityIndicator,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {window} from '@/constants/sizes';
@@ -36,6 +38,8 @@ import CouponRow from './components/CouponRow';
 import OptionSwitchRow from './components/OptionSwitchRow';
 import SplitTotalRow from './components/SplitTotalRow';
 import SubmitButton from './components/SubmitButton';
+import {cargoApi} from '@/api/cargoApi';
+import {Alert} from 'react-native';
 
 // Wider page width to accommodate larger vehicle icons while keeping side peek
 // Transparent, outlined switch with orange borders
@@ -103,10 +107,13 @@ const YukOlusturScreen = ({navigation}) => {
   const [totalAmount, setTotalAmount] = React.useState('');
   const [activeVehicleIndex, setActiveVehicleIndex] = React.useState(0);
   const [submitting, setSubmitting] = React.useState(false);
+  const [cargoScanning, setCargoScanning] = React.useState(false);
   const modalAnim = React.useRef(new Animated.Value(0)).current;
   // Action pill animation state
   const [pillOnRight, setPillOnRight] = React.useState(false);
   const pillSlide = React.useRef(new Animated.Value(0)).current; // 0 left, 1 right
+  // Carousel ref for auto-scrolling
+  const carouselRef = React.useRef(null);
 
   const togglePill = () => {
     const toValue = pillOnRight ? 0 : 1;
@@ -157,6 +164,21 @@ const YukOlusturScreen = ({navigation}) => {
     }
   };
 
+  // Map backend vehicle type to carousel index
+  const mapVehicleTypeToIndex = (vehicleType) => {
+    const mapping = {
+      'MOTORCYCLE': 0,      // Motorsiklet
+      'MINIVAN': 1,         // Minivan
+      'FULL_VAN': 2,        // Panelvan
+      'PICKUP_TRUCK': 3,    // Kamyonet
+      'TRUCK': 4,           // Kamyon
+    };
+
+    const index = mapping[vehicleType];
+    console.log(`🚗 Vehicle mapping: ${vehicleType} -> index ${index}`);
+    return index !== undefined ? index : 0; // Default to first vehicle if not found
+  };
+
   const handlePickImage = async () => {
     try {
       const ok = await requestPhotoPermission();
@@ -172,6 +194,67 @@ const YukOlusturScreen = ({navigation}) => {
         const name =
           res.filename || res.path.split('/').pop() || 'Seçilen fotoğraf';
         setPickedImageName(name);
+
+        // If "Yük Tarat" mode is active, call cargo scan API
+        if (pillOnRight) {
+          console.log('🔍 Yük Tarat modu aktif - Cargo Scan başlatılıyor...');
+          setCargoScanning(true);
+          try {
+            const scanResult = await cargoApi.scan(res);
+            console.log('📦 Cargo Scan Sonucu:', JSON.stringify(scanResult, null, 2));
+            setCargoScanning(false);
+
+            // Show success message to user
+            if (scanResult.success && scanResult.message) {
+              Alert.alert(
+                'Yük Analizi Tamamlandı',
+                scanResult.message,
+                [
+                  {
+                    text: 'Tamam',
+                    onPress: () => {
+                      // Auto-select vehicle based on scan result
+                      if (scanResult.data?.original_vehicle) {
+                        const vehicleIndex = mapVehicleTypeToIndex(scanResult.data.original_vehicle);
+                        console.log('🎯 Otomatik araç seçimi:', vehicleItems[vehicleIndex]?.name);
+
+                        // Update state
+                        setActiveVehicleIndex(vehicleIndex);
+
+                        // Scroll carousel to selected vehicle
+                        if (carouselRef.current) {
+                          try {
+                            carouselRef.current.scrollToIndex({
+                              index: vehicleIndex,
+                              animated: true,
+                            });
+                            console.log('✅ Carousel scrolled to index:', vehicleIndex);
+                          } catch (error) {
+                            console.warn('⚠️ Carousel scroll error:', error);
+                            // Fallback: try scrollToOffset
+                            carouselRef.current.scrollToOffset({
+                              offset: vehicleIndex * PAGE_WIDTH,
+                              animated: true,
+                            });
+                          }
+                        }
+                      }
+                    },
+                  },
+                ],
+                { cancelable: false }
+              );
+            }
+          } catch (scanError) {
+            console.error('❌ Cargo Scan Hatası:', scanError.message);
+            setCargoScanning(false);
+            Alert.alert(
+              'Yük Tarama Hatası',
+              'Yük analizi sırasında bir hata oluştu. Lütfen tekrar deneyin.',
+              [{ text: 'Tamam' }]
+            );
+          }
+        }
       }
     } catch (e) {
       // Ignore user cancellation
@@ -338,7 +421,7 @@ const YukOlusturScreen = ({navigation}) => {
           <View pointerEvents="none" style={styles.staticEllipse} />
 
           {/* Carousel - scrolls with content */}
-          <CarouselRN onActiveIndexChange={setActiveVehicleIndex} />
+          <CarouselRN ref={carouselRef} onActiveIndexChange={setActiveVehicleIndex} />
 
           {/* Action pill under carousel */}
           <TouchableOpacity
@@ -693,6 +776,16 @@ const YukOlusturScreen = ({navigation}) => {
                 </View>
               )}
             </Animated.View>
+          </View>
+        </View>
+      )}
+
+      {/* Loading overlay for cargo scan */}
+      {cargoScanning && (
+        <View style={styles.loadingOverlay}>
+          <View style={styles.loadingContent}>
+            <ActivityIndicator size="large" color="#FF5B04" />
+            <Text style={styles.loadingText}>Yük analiz ediliyor...</Text>
           </View>
         </View>
       )}
@@ -1282,16 +1375,59 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     textAlign: 'center',
   },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10001,
+    elevation: 10001,
+  },
+  loadingContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 32,
+    alignItems: 'center',
+    gap: 16,
+    shadowColor: '#000000',
+    shadowOpacity: 0.3,
+    shadowOffset: {width: 0, height: 4},
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  loadingText: {
+    fontFamily: 'Urbanist',
+    fontWeight: '600',
+    fontSize: 16,
+    lineHeight: 20,
+    color: '#0F172A',
+    textAlign: 'center',
+  },
 });
 
 export default YukOlusturScreen;
 
-const CarouselRN = ({onActiveIndexChange}) => {
+const CarouselRN = React.forwardRef(({onActiveIndexChange}, forwardedRef) => {
   const scrollX = React.useRef(new Animated.Value(0)).current;
+  const internalRef = React.useRef(null);
   // Blur is now applied within VehicleSlideItem only on the image area
   const [activeIndex, setActiveIndex] = React.useState(0);
   const activeIndexRef = React.useRef(0);
   const [isScrolling, setIsScrolling] = React.useState(false);
+
+  // Merge refs - expose internal ref to parent
+  React.useImperativeHandle(
+    forwardedRef,
+    () => ({
+      scrollToIndex: (params) => {
+        internalRef.current?.scrollToIndex(params);
+      },
+      scrollToOffset: (params) => {
+        internalRef.current?.scrollToOffset(params);
+      },
+    }),
+    []
+  );
 
   // Keep active index in sync during scroll to pre-render neighbors and avoid settle-time hiccup
   React.useEffect(() => {
@@ -1369,6 +1505,7 @@ const CarouselRN = ({onActiveIndexChange}) => {
       {/* Active vehicle name overlay (white text, no background) */}
 
       <Animated.FlatList
+        ref={internalRef}
         horizontal
         showsHorizontalScrollIndicator={false}
         data={vehicleItems}
@@ -1402,4 +1539,6 @@ const CarouselRN = ({onActiveIndexChange}) => {
       />
     </View>
   );
-};
+});
+
+CarouselRN.displayName = 'CarouselRN';
