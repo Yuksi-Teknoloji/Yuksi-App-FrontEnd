@@ -16,6 +16,7 @@ import {
   KeyboardAvoidingView,
   FlatList,
   ActivityIndicator,
+  InteractionManager,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {window} from '@/constants/sizes';
@@ -114,6 +115,20 @@ const YukOlusturScreen = ({navigation}) => {
   const pillSlide = React.useRef(new Animated.Value(0)).current; // 0 left, 1 right
   // Carousel ref for auto-scrolling
   const carouselRef = React.useRef(null);
+  // Defer heavy carousel rendering until after navigation completes
+  const [carouselReady, setCarouselReady] = React.useState(false);
+
+  React.useEffect(() => {
+    const interaction = InteractionManager.runAfterInteractions(() => {
+      setCarouselReady(true);
+    });
+    return () => interaction.cancel();
+  }, []);
+
+  // Memoize callback for carousel
+  const handleActiveIndexChange = React.useCallback((idx) => {
+    setActiveVehicleIndex(idx);
+  }, []);
 
   const togglePill = () => {
     const toValue = pillOnRight ? 0 : 1;
@@ -421,7 +436,16 @@ const YukOlusturScreen = ({navigation}) => {
           <View pointerEvents="none" style={styles.staticEllipse} />
 
           {/* Carousel - scrolls with content */}
-          <CarouselRN ref={carouselRef} onActiveIndexChange={setActiveVehicleIndex} />
+          {carouselReady ? (
+            <MemoizedCarouselRN
+              ref={carouselRef}
+              onActiveIndexChange={handleActiveIndexChange}
+            />
+          ) : (
+            <View style={styles.carouselPlaceholder}>
+              <ActivityIndicator size="large" color="#FF5B04" />
+            </View>
+          )}
 
           {/* Action pill under carousel */}
           <TouchableOpacity
@@ -1403,15 +1427,17 @@ const styles = StyleSheet.create({
     color: '#0F172A',
     textAlign: 'center',
   },
+  carouselPlaceholder: {
+    height: 400,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
-
-export default YukOlusturScreen;
 
 const CarouselRN = React.forwardRef(({onActiveIndexChange}, forwardedRef) => {
   const scrollX = React.useRef(new Animated.Value(0)).current;
   const internalRef = React.useRef(null);
   // Blur is now applied within VehicleSlideItem only on the image area
-  const [activeIndex, setActiveIndex] = React.useState(0);
   const activeIndexRef = React.useRef(0);
   const [isScrolling, setIsScrolling] = React.useState(false);
 
@@ -1430,13 +1456,17 @@ const CarouselRN = React.forwardRef(({onActiveIndexChange}, forwardedRef) => {
   );
 
   // Keep active index in sync during scroll to pre-render neighbors and avoid settle-time hiccup
+  const onActiveIndexChangeRef = React.useRef(onActiveIndexChange);
+  React.useEffect(() => {
+    onActiveIndexChangeRef.current = onActiveIndexChange;
+  }, [onActiveIndexChange]);
+
   React.useEffect(() => {
     const id = scrollX.addListener(({value}) => {
       const idx = Math.round(value / PAGE_WIDTH);
       if (idx !== activeIndexRef.current) {
         activeIndexRef.current = idx;
-        setActiveIndex(idx);
-        onActiveIndexChange?.(idx);
+        onActiveIndexChangeRef.current?.(idx);
       }
     });
     return () => scrollX.removeListener(id);
@@ -1470,9 +1500,9 @@ const CarouselRN = React.forwardRef(({onActiveIndexChange}, forwardedRef) => {
 
       const showBlur =
         !isScrolling &&
-        index !== activeIndex &&
-        Math.abs(index - activeIndex) <= 1;
-      const isActive = index === activeIndex;
+        index !== activeIndexRef.current &&
+        Math.abs(index - activeIndexRef.current) <= 1;
+      const isActive = index === activeIndexRef.current;
 
       return (
         <View style={{width: PAGE_WIDTH, height: 300}}>
@@ -1497,7 +1527,7 @@ const CarouselRN = React.forwardRef(({onActiveIndexChange}, forwardedRef) => {
         </View>
       );
     },
-    [activeIndex],
+    [scrollX, isScrolling],
   );
 
   return (
@@ -1515,10 +1545,11 @@ const CarouselRN = React.forwardRef(({onActiveIndexChange}, forwardedRef) => {
         decelerationRate="normal"
         disableIntervalMomentum={true}
         bounces={false}
-        windowSize={5}
-        initialNumToRender={3}
-        maxToRenderPerBatch={3}
-        updateCellBatchingPeriod={16}
+        windowSize={3}
+        initialNumToRender={1}
+        maxToRenderPerBatch={2}
+        updateCellBatchingPeriod={50}
+        removeClippedSubviews={true}
         getItemLayout={(_, i) => ({
           length: PAGE_WIDTH,
           offset: PAGE_WIDTH * i,
@@ -1542,3 +1573,8 @@ const CarouselRN = React.forwardRef(({onActiveIndexChange}, forwardedRef) => {
 });
 
 CarouselRN.displayName = 'CarouselRN';
+
+// Memoize CarouselRN to prevent re-renders
+const MemoizedCarouselRN = React.memo(CarouselRN);
+
+export default YukOlusturScreen;

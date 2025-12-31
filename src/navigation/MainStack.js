@@ -1,7 +1,7 @@
-import React from 'react';
+import React, {Suspense} from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createStackNavigator} from '@react-navigation/stack';
-import {View, Text, StyleSheet} from 'react-native';
+import {View, Text, StyleSheet, ActivityIndicator} from 'react-native';
 
 import HomeScreen from '../screens/main/HomeScreen';
 import PostScreen from '../screens/main/PostScreen';
@@ -10,10 +10,18 @@ import ProfileScreen from '../screens/main/ProfileScreen';
 import VehicleCategoryScreen from '../screens/main/VehicleCategoryScreen';
 import VehicleListScreen from '../screens/main/VehicleListScreen';
 import ModelSelectScreen from '../screens/main/ModelSelectScreen';
-import YukOlusturScreen from '../screens/main/YukOlusturScreen';
-import YukOlusturResultScreen from '../screens/main/YukOlusturResultScreen';
+// Lazy load heavy screens
+const YukOlusturScreen = React.lazy(() => import('../screens/main/YukOlusturScreen'));
+const YukOlusturResultScreen = React.lazy(() => import('../screens/main/YukOlusturResultScreen'));
 import CarrierFlow2Screen from '../screens/main/CarrierFlow2Screen';
 import KanguruChatScreen from '../screens/main/KanguruChatScreen';
+
+// Loading fallback component
+const ScreenLoader = () => (
+  <View style={styles.loaderContainer}>
+    <ActivityIndicator size="large" color="#FF5B04" />
+  </View>
+);
 
 // SVG ikonları import et - normal ve pressed versiyonları
 import HomeIcon from '../assets/icons/home-icon.svg';
@@ -111,6 +119,19 @@ const TabNavigator = () => {
   );
 };
 
+// Wrap lazy components with Suspense
+const LazyYukOlustur = (props) => (
+  <Suspense fallback={<ScreenLoader />}>
+    <YukOlusturScreen {...props} />
+  </Suspense>
+);
+
+const LazyYukOlusturResult = (props) => (
+  <Suspense fallback={<ScreenLoader />}>
+    <YukOlusturResultScreen {...props} />
+  </Suspense>
+);
+
 const MainStack = () => {
   return (
     <Stack.Navigator
@@ -121,8 +142,8 @@ const MainStack = () => {
       <Stack.Screen name="VehicleCategory" component={VehicleCategoryScreen} />
   <Stack.Screen name="VehicleList" component={VehicleListScreen} />
   <Stack.Screen name="ModelSelect" component={ModelSelectScreen} />
-      <Stack.Screen name="YukOlustur" component={YukOlusturScreen} />
-  <Stack.Screen name="YukOlusturResult" component={YukOlusturResultScreen} />
+      <Stack.Screen name="YukOlustur" component={LazyYukOlustur} />
+  <Stack.Screen name="YukOlusturResult" component={LazyYukOlusturResult} />
       {/* The user requested navigation to 'carrier flow2' (with a space), so we register that exact route name. */}
       <Stack.Screen name="carrier flow2" component={CarrierFlow2Screen} />
       <Stack.Screen name="KanguruChat" component={KanguruChatScreen} />
@@ -131,6 +152,12 @@ const MainStack = () => {
 };
 
 const styles = StyleSheet.create({
+  loaderContainer: {
+    flex: 1,
+    backgroundColor: '#E4EEF0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   tabIconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
